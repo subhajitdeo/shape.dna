@@ -1,0 +1,6 @@
+symbol,date,current_price,pattern_type,confidence
+AUBANK.NS,2026-05-15,990.5,m_pattern_double_top,0.82
+3MINDIA.NS,2026-05-15,31245.0,symmetrical_triangle,7565.22
+APLAPOLLO.NS,2026-05-15,1890.2,w_pattern_double_bottom,0.83
+ACC.NS,2026-05-15,1362.8,symmetrical_triangle,365.57
+AIAENG.NS,2026-05-15,3856.3,m_pattern_double_top,0.75
