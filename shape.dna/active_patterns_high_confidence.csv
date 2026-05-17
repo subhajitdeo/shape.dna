@@ -1,0 +1,14 @@
+symbol,date,pattern,confidence,urgency_score,breakout_direction,breakout_level,current_price,distance_to_breakout_pct,days_to_apex,target,stop_loss
+HYUNDAI.NS,2026-05-15,symmetrical_triangle,100.0,500.0,up,1819.44,1825.2,0.0,0.0,1857.18,1889.98
+ACC.NS,2026-05-15,symmetrical_triangle,99.2,492.2,up,1363.87,1362.8,0.1,0.0,1383.23,1397.81
+HINDPETRO.NS,2026-05-15,symmetrical_triangle,71.5,255.7,up,376.84,366.4,2.8,0.0,382.86,392.63
+IOB.NS,2026-05-15,symmetrical_triangle,91.8,149.8,up,34.07,33.79,0.8,2.0,33.97,33.78
+KARURVYSYA.NS,2026-05-15,w_pattern_double_bottom,100.0,95.3,up,300.45,299.05,0.5,,326.15,269.26
+LATENTVIEW.NS,2026-05-15,w_pattern_double_bottom,100.0,75.6,up,314.75,307.25,2.4,,339.55,284.15
+JBMA.NS,2026-05-15,w_pattern_double_bottom,79.4,74.8,up,645.3,641.6,0.6,,677.75,600.59
+ICICIGI.NS,2026-05-15,w_pattern_double_bottom,79.7,73.2,up,1850.2,1835.2,0.8,,1943.6,1721.66
+JKCEMENT.NS,2026-05-15,w_pattern_double_bottom,96.3,67.8,up,5626.0,5464.0,3.0,,5965.5,5180.77
+JUBLINGREA.NS,2026-05-15,w_pattern_double_bottom,100.0,65.8,up,756.85,731.8,3.4,,810.95,688.7
+ITC.NS,2026-05-15,w_pattern_double_bottom,72.9,56.9,up,316.25,309.45,2.2,,330.9,295.57
+INDIACEM.NS,2026-05-15,w_pattern_double_bottom,72.2,52.1,up,411.3,400.15,2.8,,430.2,384.55
+INDIGO.NS,2026-05-15,w_pattern_double_bottom,100.0,51.8,up,4522.7,4314.9,4.8,,4807.0,4153.63
