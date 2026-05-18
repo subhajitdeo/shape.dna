@@ -2,8 +2,10 @@ name: Detect Chart Patterns
 
 on:
   push:
+    branches: [ main ]          # limit to main branch to avoid noise
   schedule:
     - cron: '45 10 * * *'
+  workflow_dispatch:            # allow manual trigger
 
 permissions:
   contents: write
@@ -12,21 +14,27 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'          # cache pip dependencies
 
       - name: Install dependencies
         run: pip install numpy scipy pandas
 
       - name: Run pattern detection
-        run: python detect_patterns.py   # now looks for *.NS.json
+        id: detect
+        run: python detect_patterns.py
+        continue-on-error: false   # fail immediately if script errors
+
+      - name: Ensure output directory exists
+        run: mkdir -p shape.dna
 
       - name: Commit and push results
+        if: success()               # only if detection succeeded
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
