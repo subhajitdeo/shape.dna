@@ -3,8 +3,8 @@ name: Detect Chart Patterns
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'   # 9:30 PM IST (1 hour after fetch)
- 
+    - cron: '*/5 * * * *'
+
 permissions:
   contents: write
 
