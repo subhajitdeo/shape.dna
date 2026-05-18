@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Fetches daily OHLCV data for symbols from nifty500.csv.
-- Adds .NS suffix for NSE.
-- Waits 0.7 seconds between requests to avoid rate limiting.
-- Skips symbols that return no data or raise errors.
-- Saves each symbol as data/SYMBOL.json (format compatible with detect_patterns.py).
+Fetch daily OHLCV data for NSE symbols listed in nifty500.csv.
+- Adds .NS suffix.
+- Waits 0.7 seconds between requests.
+- Skips symbols with no data.
+- Saves each symbol as data/SYMBOL.json.
 """
 
 import os
@@ -12,31 +12,24 @@ import json
 import time
 import pandas as pd
 import yfinance as yf
-from datetime import datetime
 
 def load_symbols(csv_path="nifty500.csv"):
-    """Read symbols from CSV, skip header, clean up."""
     df = pd.read_csv(csv_path)
-    # Assuming column name is 'SYMBOL' (as in your file)
     symbols = df['SYMBOL'].dropna().str.strip().tolist()
-    # Remove any obvious non-symbols like 'SYMBOL' header if present
+    # Remove any stray header value if present
     symbols = [s for s in symbols if s and s.upper() != 'SYMBOL']
     return symbols
 
 def fetch_symbol(symbol, retries=2, delay=1):
-    """Fetch data for one symbol using yfinance. Return DataFrame or None."""
     ticker = f"{symbol}.NS"
     for attempt in range(retries):
         try:
             stock = yf.Ticker(ticker)
-            # Get last 90 days (or more) – we need at least 60 for pattern detection
             hist = stock.history(period="3mo")
             if hist.empty:
                 print(f"⚠️ No data for {ticker}")
                 return None
-            # Reset index to have 'time' column
             hist = hist.reset_index()
-            # Rename columns to match detect_patterns.py expectations
             hist = hist.rename(columns={
                 'Date': 'time',
                 'Open': 'open',
@@ -45,9 +38,7 @@ def fetch_symbol(symbol, retries=2, delay=1):
                 'Close': 'close',
                 'Volume': 'volume'
             })
-            # Convert time to string ISO format (detect_patterns.py uses pd.to_datetime)
             hist['time'] = hist['time'].dt.strftime('%Y-%m-%d')
-            # Keep only needed columns
             hist = hist[['time', 'open', 'high', 'low', 'close', 'volume']]
             return hist.to_dict('records')
         except Exception as e:
@@ -59,12 +50,12 @@ def fetch_symbol(symbol, retries=2, delay=1):
 def main():
     symbols = load_symbols()
     print(f"📊 Found {len(symbols)} symbols in nifty500.csv")
-    
+
     os.makedirs("data", exist_ok=True)
-    
+
     successful = 0
     failed = []
-    
+
     for idx, sym in enumerate(symbols, 1):
         print(f"🔄 [{idx}/{len(symbols)}] Fetching {sym}.NS ...")
         data = fetch_symbol(sym)
@@ -77,17 +68,17 @@ def main():
         else:
             print(f"⚠️ Skipping {sym}.NS: No data or error")
             failed.append(sym)
-        
-        # Wait 0.7 seconds between requests to avoid rate limiting
+
+        # 0.7 second delay between requests
         time.sleep(0.7)
-    
+
     print("\n=========================================")
     print(f"📊 FETCH SUMMARY:")
     print(f"   ✅ Successful: {successful} symbols")
     print(f"   ⚠️ Failed/Skipped: {len(failed)} symbols")
     print(f"   📈 Total processed: {len(symbols)} symbols")
     print("=========================================\n")
-    
+
     if failed:
         print("⚠️ FAILED SYMBOLS:\n")
         for sym in failed:
