@@ -6,7 +6,7 @@ on:
       - 'data/**'
       - '.github/workflows/detect-patterns.yml'
   schedule:
-    - cron: '40 10 * * *'
+    - cron: '45 10 * * *'
 
 permissions:
   contents: write
