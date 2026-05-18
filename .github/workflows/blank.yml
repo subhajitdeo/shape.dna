@@ -3,7 +3,7 @@ name: Fetch Stock Data
 on:
   schedule:
     # 8:30 PM IST =  03:00 UTC
-    - cron: '30 09 * * *'
+    - cron: '00 10 * * *'
   workflow_dispatch:
 
 permissions:
