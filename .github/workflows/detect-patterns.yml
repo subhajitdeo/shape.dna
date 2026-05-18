@@ -1,9 +1,10 @@
 name: Detect Chart Patterns
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
+  push:
+    paths:
+      - 'data/**'
+      - '.github/workflows/detect-patterns.yml'
 
 permissions:
   contents: write
