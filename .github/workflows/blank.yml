@@ -2,8 +2,12 @@ name: Update Stock Data
 
 on:
   schedule:
-    - cron: '30 16 * * 1-5'   # Weekdays at 16:30 UTC (22:00 IST)
-  workflow_dispatch:          # Manual trigger
+    - cron: '30 16 * * 1-5'   # Weekdays at 16:30 UTC
+  workflow_dispatch:
+
+# Grant write permission for the repository contents
+permissions:
+  contents: write
 
 jobs:
   fetch:
