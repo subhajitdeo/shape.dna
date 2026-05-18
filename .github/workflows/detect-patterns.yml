@@ -22,14 +22,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install numpy scipy pandas requests
+          pip install numpy scipy pandas
 
       - name: Run pattern detection
-        run: python calculate.py
+        run: python detect_patterns.py
 
       - name: Commit and push results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/processed/
+          git add shape.dna/
           git diff --cached --quiet || (git commit -m "Auto-update patterns [skip ci]" && git push)
