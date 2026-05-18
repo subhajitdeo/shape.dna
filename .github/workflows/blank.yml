@@ -2,11 +2,11 @@ name: Update Stock Data
 
 on:
   schedule:
-    - cron: '30 10 * * 1-5'   # Run at 16:30 UTC (22:00 IST) on weekdays
-  workflow_dispatch:          # Allow manual trigger
+    - cron: '30 16 * * 1-5'   # Weekdays at 16:30 UTC (22:00 IST)
+  workflow_dispatch:          # Manual trigger
 
 jobs:
-  update:
+  fetch:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,19 +21,16 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install yfinance pandas   # if not already in requirements
+          pip install yfinance pandas
 
       - name: Fetch stock data
         run: python fetch_stock_data.py
-
-      - name: Detect patterns
-        run: python detect_patterns.py
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
-          git add data/ shape.dna/
-          git diff --cached --quiet || git commit -m "Auto-update stock data & patterns [skip ci]"
+          git add data/
+          git diff --cached --quiet || git commit -m "Auto-update stock data [skip ci]"
           git push origin main
