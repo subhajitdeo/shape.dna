@@ -23,21 +23,8 @@ jobs:
       - name: Install dependencies
         run: pip install numpy scipy pandas
 
-      - name: Prepare data files (.NS.json -> .json)
-        run: |
-          mkdir -p data
-          # Find all .NS.json files anywhere in the repo
-          find . -type f -name "*.NS.json" | while read -r file; do
-            # Extract base name without .NS.json
-            base=$(basename "$file" .NS.json)
-            # Create a symbolic link inside data/ as base.json
-            ln -sf "$(realpath --relative-to=data "$file")" "data/${base}.json"
-          done
-          echo "Linked .NS.json files to data/*.json:"
-          ls -la data/
-
       - name: Run pattern detection
-        run: python detect_patterns.py
+        run: python detect_patterns.py   # now looks for *.NS.json
 
       - name: Commit and push results
         run: |
