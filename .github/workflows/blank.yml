@@ -2,10 +2,9 @@ name: Update Stock Data
 
 on:
   schedule:
-    - cron: '30 10 * * *'   # Weekdays at 16:30 UTC
+    - cron: '30 16 * * 1-5'
   workflow_dispatch:
 
-# Grant write permission for the repository contents
 permissions:
   contents: write
 
@@ -34,7 +33,24 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+          
+          # Stage the new/updated data files
           git add data/
+          
+          # Stash any local changes (including untracked files) so we can pull cleanly
+          git stash --include-untracked || true
+          
+          # Pull remote changes with rebase
+          git pull --rebase origin main
+          
+          # Restore our stashed data files
+          git stash pop || true
+          
+          # Stage again (in case stash pop unstaged them)
+          git add data/
+          
+          # Commit only if there are actual changes
           git diff --cached --quiet || git commit -m "Auto-update stock data [skip ci]"
+          
+          # Push to remote
           git push origin main
