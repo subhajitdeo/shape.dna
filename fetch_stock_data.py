@@ -5,6 +5,7 @@ Fetch daily OHLCV data for NSE symbols listed in nifty500.csv.
 - Waits 0.7 seconds between requests.
 - Skips symbols with no data.
 - Saves each symbol as data/SYMBOL.json.
+- Fetches 1 year of historical data.
 """
 
 import os
@@ -25,7 +26,7 @@ def fetch_symbol(symbol, retries=2, delay=1):
     for attempt in range(retries):
         try:
             stock = yf.Ticker(ticker)
-            hist = stock.history(period="3mo")
+            hist = stock.history(period="1y")
             if hist.empty:
                 print(f"⚠️ No data for {ticker}")
                 return None
