@@ -165,6 +165,7 @@
             padding: 4px 0;
             color: #e2e8f0;
         }
+        .detail-item.highlight { color: #facc15; font-weight: bold; }
         .loading { text-align: center; padding: 40px; color: #94a3b8; }
         @media (max-width: 900px) { .dashboard { flex-direction: column; } .chart-panel { min-width: auto; } }
         i { color: #94a3b8; }
@@ -204,7 +205,7 @@
 <body>
 <div class="container">
     <h1><i class="fas fa-chart-line" style="color:#3b82f6"></i> · Active Long Patterns</h1>
-    <div class="sub">Beautiful pattern visualization - Filled triangles, Boxes & W-Patterns</div>
+    <div class="sub">Valid Long Setups Only - Price below Breakout | Stop Loss below Price | Target above Breakout</div>
 
     <div class="dashboard">
         <div class="patterns-panel">
@@ -231,16 +232,17 @@
                         <option value="symbol_az">Symbol (A → Z)</option>
                         <option value="confidence_desc" selected>Confidence (High → Low)</option>
                         <option value="urgency_desc">Readiness (High → Low)</option>
+                        <option value="days_asc">Days to Apex (Low → High)</option>
                     </select>
                 </div>
             </div>
             <div style="overflow-x: auto; max-height: 500px;">
                 <table class="pattern-table" id="patternTable">
                     <thead>
-                        <tr><th>Symbol</th><th>Pattern</th><th>Conf</th><th>Readiness</th><th>Breakout</th><th>Current</th></tr>
+                        <tr><th>Symbol</th><th>Pattern</th><th>Conf</th><th>Readiness</th><th>Breakout</th><th>Target</th><th>Days to Apex</th><th>R:R</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="6" class="loading">Loading patterns...</td></tr>
+                        <tr><td colspan="8" class="loading">Loading patterns...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -249,7 +251,9 @@
                 <div class="legend-item"><div class="legend-color" style="background:#f97316;"></div><span>Breakout</span></div>
                 <div class="legend-item"><div class="legend-color" style="background:#22c55e;"></div><span>Target</span></div>
                 <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div><span>Stop Loss</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div><span>Pattern Area</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div><span>Pattern Area (Filled)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#4ade80;"></div><span>Support Line</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div><span>Resistance Line</span></div>
             </div>
         </div>
 
@@ -275,23 +279,29 @@
     let canvasOverlay = null;
     let overlayCtx = null;
 
-    const tbody = document.getElementById('tableBody');
-    const minConfInput = document.getElementById('minConfidence');
-    const minReadInput = document.getElementById('minReadiness');
-    const applyBtn = document.getElementById('applyFilters');
-    const resetBtn = document.getElementById('resetFilters');
-    const sortSelect = document.getElementById('sortBy');
-    const patternCountSpan = document.getElementById('patternCount');
-    const selectedSymbolSpan = document.getElementById('selectedSymbol');
-    const patternDetailsDiv = document.getElementById('patternDetails');
-    const statsPanel = document.getElementById('statsPanel');
-
+    // VALIDATION: Only keep valid LONG signals
     function isValidLongSignal(pattern) {
+        // Must be long direction
         if (pattern.breakout_direction !== 'up') return false;
+        
+        // Price must be BELOW breakout (waiting for breakout, not already broken)
         if (pattern.current_price >= pattern.breakout_level) return false;
+        
+        // Stop loss must be BELOW current price (proper risk placement)
         if (pattern.stop_loss >= pattern.current_price) return false;
+        
+        // Target must be ABOVE breakout level (upside potential)
         if (pattern.target <= pattern.breakout_level) return false;
+        
+        // Distance to breakout must be positive
         if (pattern.distance_to_breakout_pct <= 0) return false;
+        
+        // For triangles: support_slope should be positive, resistance_slope negative
+        if (pattern.pattern === 'symmetrical_triangle' || pattern.pattern === 'ascending_triangle') {
+            if (pattern.support_slope !== undefined && pattern.support_slope <= 0) return false;
+            if (pattern.resistance_slope !== undefined && pattern.resistance_slope >= 0) return false;
+        }
+        
         return true;
     }
 
@@ -307,13 +317,15 @@
     }
 
     async function loadPatterns() {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">Loading patterns from GitHub...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="loading">Loading patterns from GitHub...</td></tr>';
         const data = await fetchJSON(PATTERNS_URL);
+        
         if (!data || !data.patterns) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">❌ No active patterns found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">❌ No active patterns found.</td></tr>';
             return false;
         }
         
+        // Filter to ONLY valid long signals
         const validPatterns = [];
         const invalidPatterns = [];
         
@@ -328,10 +340,12 @@
         allPatterns = validPatterns;
         
         statsPanel.innerHTML = `
-            <span class="stat-good">✅ Valid Long Signals: ${validPatterns.length}</span>
-            <span class="stat-bad">⚠️ Filtered Out: ${invalidPatterns.length}</span>
-            <span>📊 Total: ${data.patterns.length}</span>
+            <span class="stat-good">✅ Valid Long Setups: ${validPatterns.length}</span>
+            <span class="stat-bad">⚠️ Filtered (Invalid/Down): ${invalidPatterns.length}</span>
+            <span>📊 Total Scanned: ${data.patterns.length}</span>
         `;
+        
+        console.log(`Filtered out ${invalidPatterns.length} invalid patterns`);
         
         applyFiltersAndRender();
         return true;
@@ -349,6 +363,8 @@
             filtered.sort((a,b) => b.confidence - a.confidence);
         } else if (sortValue === 'urgency_desc') {
             filtered.sort((a,b) => (b.urgency_score || 0) - (a.urgency_score || 0));
+        } else if (sortValue === 'days_asc') {
+            filtered.sort((a,b) => (a.days_to_apex || 999) - (b.days_to_apex || 999));
         }
         
         filteredPatterns = filtered;
@@ -365,22 +381,33 @@
 
     function renderTable() {
         if (!filteredPatterns.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">⚠️ No valid long patterns</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">⚠️ No valid long patterns with current filters</td></tr>';
             return;
         }
         let html = '';
         for (let p of filteredPatterns) {
             const readiness = p.urgency_score || '—';
             const patternName = p.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern');
+            const days = p.days_to_apex !== null && p.days_to_apex !== undefined ? p.days_to_apex : '—';
+            const rr = p.target && p.stop_loss && p.current_price ? 
+                ((p.target - p.current_price) / (p.current_price - p.stop_loss)).toFixed(1) : '—';
+            
+            // Urgency badge for days to apex
+            let urgencyBadge = '';
+            if (days !== '—' && days <= 3) {
+                urgencyBadge = ' 🔥';
+            }
             
             html += `<tr data-symbol="${p.symbol}">
-                        <td><strong>${p.symbol}</strong></td>
+                        <td><strong>${p.symbol}</strong>${urgencyBadge}</td>
                         <td><span class="badge">${patternName}</span></td>
                         <td class="confidence-high">${p.confidence}%</td>
                         <td class="readiness-high">${readiness}</td>
                         <td>${p.breakout_level || '—'}</td>
-                        <td>${p.current_price || '—'}</td>
-                      </tr>`;
+                        <td>${p.target || '—'}</td>
+                        <td>${days}</td>
+                        <td>1:${rr}</td>
+                       </tr>`;
         }
         tbody.innerHTML = html;
         document.querySelectorAll('#patternTable tbody tr').forEach(row => {
@@ -394,11 +421,9 @@
     }
 
     function createCanvasOverlay(chartContainer) {
-        // Remove existing canvas overlay if any
         const existingCanvas = document.getElementById('pattern-overlay-canvas');
         if (existingCanvas) existingCanvas.remove();
         
-        // Create new canvas overlay
         const canvas = document.createElement('canvas');
         canvas.id = 'pattern-overlay-canvas';
         canvas.style.position = 'absolute';
@@ -456,11 +481,9 @@
         });
         currentSeries.setData(chartData);
 
-        // Create canvas overlay
         canvasOverlay = createCanvasOverlay(chartContainer);
         overlayCtx = canvasOverlay.getContext('2d');
         
-        // Draw pattern after chart renders
         setTimeout(() => {
             drawPatternOnCanvas(currentChart, pattern, chartData, canvasOverlay, overlayCtx);
         }, 100);
@@ -481,49 +504,6 @@
         });
     }
 
-    function getPriceYCoordinate(price, chart, chartData) {
-        // Get the y coordinate for a given price
-        const timeScale = chart.timeScale();
-        const visibleRange = timeScale.getVisibleLogicalRange();
-        if (!visibleRange) return null;
-        
-        const firstVisible = Math.floor(visibleRange.from);
-        const lastVisible = Math.ceil(visibleRange.to);
-        
-        // Find min/max prices in visible range
-        let minPrice = Infinity, maxPrice = -Infinity;
-        for (let i = firstVisible; i <= lastVisible && i < chartData.length; i++) {
-            if (chartData[i]) {
-                minPrice = Math.min(minPrice, chartData[i].low);
-                maxPrice = Math.max(maxPrice, chartData[i].high);
-            }
-        }
-        
-        const padding = 0.05; // 5% padding
-        const range = maxPrice - minPrice;
-        const yMin = minPrice - (range * padding);
-        const yMax = maxPrice + (range * padding);
-        
-        // Convert price to y coordinate (0 at top, height at bottom)
-        const height = chart.height();
-        const y = ((yMax - price) / (yMax - yMin)) * height;
-        
-        return Math.max(0, Math.min(height, y));
-    }
-
-    function getTimeXCoordinate(timeStr, chart, chartData) {
-        // Get the x coordinate for a given time
-        const timeScale = chart.timeScale();
-        const logical = timeScale.logicalFromCoordinate(timeScale.width() / 2);
-        
-        // Find index of the time
-        const index = chartData.findIndex(d => d.time === timeStr);
-        if (index === -1) return null;
-        
-        const coordinate = timeScale.timeToCoordinate(timeStr);
-        return coordinate;
-    }
-
     function drawPatternOnCanvas(chart, pattern, chartData, canvas, ctx) {
         if (!canvas || !ctx || !chartData.length) return;
         
@@ -536,7 +516,6 @@
         const firstIdx = Math.floor(visibleRange.from);
         const lastIdx = Math.ceil(visibleRange.to);
         
-        // Get coordinates for visible range
         const startTime = chartData[Math.max(0, firstIdx)]?.time;
         const endTime = chartData[Math.min(chartData.length - 1, lastIdx)]?.time;
         
@@ -547,13 +526,105 @@
         
         if (startX === null || endX === null) return;
         
-        // Helper to get Y coordinate for price
-        const getY = (price) => {
-            return chart.priceScale().priceToCoordinate(price);
-        };
+        const getY = (price) => chart.priceScale().priceToCoordinate(price);
         
-        // ASCENDING TRIANGLE - Fill with beautiful gradient
-        if (pattern.pattern === 'ascending_triangle') {
+        // Draw horizontal lines (Breakout, Target, Stop Loss)
+        const yBreakout = getY(pattern.breakout_level);
+        const yTarget = getY(pattern.target);
+        const yStopLoss = getY(pattern.stop_loss);
+        
+        // Breakout line (Orange)
+        if (yBreakout) {
+            ctx.beginPath();
+            ctx.moveTo(startX, yBreakout);
+            ctx.lineTo(endX, yBreakout);
+            ctx.strokeStyle = '#f97316';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 4]);
+            ctx.stroke();
+            ctx.fillStyle = '#f97316';
+            ctx.font = '10px Arial';
+            ctx.fillText('Breakout', endX - 60, yBreakout - 5);
+        }
+        
+        // Target line (Green)
+        if (yTarget && pattern.target > pattern.breakout_level) {
+            ctx.beginPath();
+            ctx.moveTo(startX, yTarget);
+            ctx.lineTo(endX, yTarget);
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.fillStyle = '#22c55e';
+            ctx.fillText('Target', endX - 50, yTarget - 5);
+        }
+        
+        // Stop Loss line (Red)
+        if (yStopLoss && pattern.stop_loss < pattern.current_price) {
+            ctx.beginPath();
+            ctx.moveTo(startX, yStopLoss);
+            ctx.lineTo(endX, yStopLoss);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText('Stop Loss', endX - 60, yStopLoss - 5);
+        }
+        
+        ctx.setLineDash([]);
+        
+        // SYMMETRICAL TRIANGLE - Filled converging triangle
+        if (pattern.pattern === 'symmetrical_triangle') {
+            const lookback = 40;
+            const apexPrice = pattern.breakout_level;
+            const supportStart = pattern.stop_loss;
+            const resistanceStart = pattern.breakout_level + (Math.abs(pattern.resistance_slope) * lookback);
+            
+            const yApex = getY(apexPrice);
+            const ySupportStart = getY(supportStart);
+            const yResistanceStart = getY(resistanceStart);
+            
+            if (yApex && ySupportStart && yResistanceStart) {
+                // Fill triangle
+                ctx.beginPath();
+                ctx.moveTo(startX, yResistanceStart);
+                ctx.lineTo(endX, yApex);
+                ctx.lineTo(startX, ySupportStart);
+                ctx.closePath();
+                
+                const gradient = ctx.createLinearGradient(startX, yResistanceStart, endX, yApex);
+                gradient.addColorStop(0, 'rgba(239, 68, 68, 0.15)');
+                gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
+                gradient.addColorStop(1, 'rgba(34, 197, 94, 0.15)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Resistance line (falling)
+                ctx.beginPath();
+                ctx.moveTo(startX, yResistanceStart);
+                ctx.lineTo(endX, yApex);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 4]);
+                ctx.stroke();
+                
+                // Support line (rising)
+                ctx.beginPath();
+                ctx.moveTo(startX, ySupportStart);
+                ctx.lineTo(endX, yApex);
+                ctx.strokeStyle = '#4ade80';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 4]);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+            }
+        }
+        
+        // ASCENDING TRIANGLE - Flat top, rising bottom
+        else if (pattern.pattern === 'ascending_triangle') {
             const resistance = pattern.breakout_level;
             const supportStart = pattern.stop_loss;
             const supportEnd = pattern.breakout_level;
@@ -563,7 +634,7 @@
             const ySupportEnd = getY(supportEnd);
             
             if (yResistance && ySupportStart && ySupportEnd) {
-                // Draw filled triangle
+                // Fill triangle
                 ctx.beginPath();
                 ctx.moveTo(startX, ySupportStart);
                 ctx.lineTo(endX, ySupportEnd);
@@ -571,14 +642,13 @@
                 ctx.lineTo(startX, yResistance);
                 ctx.closePath();
                 
-                // Fill with gradient
                 const gradient = ctx.createLinearGradient(startX, yResistance, endX, ySupportEnd);
                 gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
                 gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
                 ctx.fillStyle = gradient;
                 ctx.fill();
                 
-                // Draw borders
+                // Flat resistance line
                 ctx.beginPath();
                 ctx.moveTo(startX, yResistance);
                 ctx.lineTo(endX, yResistance);
@@ -587,6 +657,7 @@
                 ctx.setLineDash([8, 4]);
                 ctx.stroke();
                 
+                // Rising support line
                 ctx.beginPath();
                 ctx.moveTo(startX, ySupportStart);
                 ctx.lineTo(endX, ySupportEnd);
@@ -599,90 +670,55 @@
             }
         }
         
-        // SYMMETRICAL TRIANGLE - Fill with beautiful gradient
-        else if (pattern.pattern === 'symmetrical_triangle') {
-            const apexPrice = pattern.breakout_level;
-            const supportStart = pattern.stop_loss;
-            const resistanceStart = pattern.breakout_level + (pattern.resistance_slope * 40);
-            
-            const yApex = getY(apexPrice);
-            const ySupportStart = getY(supportStart);
-            const yResistanceStart = getY(resistanceStart);
-            
-            if (yApex && ySupportStart && yResistanceStart) {
-                // Draw filled triangle
-                ctx.beginPath();
-                ctx.moveTo(startX, yResistanceStart);
-                ctx.lineTo(endX, yApex);
-                ctx.lineTo(startX, ySupportStart);
-                ctx.closePath();
-                
-                // Fill with gradient
-                const gradient = ctx.createLinearGradient(startX, yResistanceStart, endX, yApex);
-                gradient.addColorStop(0, 'rgba(239, 68, 68, 0.1)');
-                gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.15)');
-                gradient.addColorStop(1, 'rgba(34, 197, 94, 0.1)');
-                ctx.fillStyle = gradient;
-                ctx.fill();
-                
-                // Draw borders
-                ctx.beginPath();
-                ctx.moveTo(startX, yResistanceStart);
-                ctx.lineTo(endX, yApex);
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([8, 4]);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(startX, ySupportStart);
-                ctx.lineTo(endX, yApex);
-                ctx.strokeStyle = '#4ade80';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([8, 4]);
-                ctx.stroke();
-                
-                ctx.setLineDash([]);
-            }
-        }
-        
-        // RECTANGLE - Fill the box
+        // RECTANGLE - Box pattern
         else if (pattern.pattern === 'rectangle') {
-            const top = pattern.resistance;
-            const bottom = pattern.support;
+            const top = pattern.resistance || pattern.breakout_level;
+            const bottom = pattern.support || pattern.stop_loss;
             
             const yTop = getY(top);
             const yBottom = getY(bottom);
             
-            if (yTop && yBottom) {
-                // Draw filled rectangle
+            if (yTop && yBottom && yTop < yBottom) {
+                // Fill rectangle
                 ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
                 ctx.fillRect(startX, yTop, endX - startX, yBottom - yTop);
                 
-                // Draw borders
+                // Border
                 ctx.strokeStyle = '#f97316';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([8, 4]);
                 ctx.strokeRect(startX, yTop, endX - startX, yBottom - yTop);
                 ctx.setLineDash([]);
+                
+                // Labels
+                ctx.fillStyle = '#f97316';
+                ctx.font = '9px Arial';
+                ctx.fillText('Resistance', endX - 65, yTop - 3);
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText('Support', endX - 55, yBottom + 10);
             }
         }
         
-        // W PATTERN - Draw the W shape
+        // W PATTERN (Double Bottom)
         else if (pattern.pattern === 'w_pattern_double_bottom') {
-            const neckline = pattern.neckline;
+            const neckline = pattern.neckline || pattern.breakout_level;
             const yNeckline = getY(neckline);
             
             // Find bottoms in chart data
             const prices = chartData.map(d => d.low);
             const len = prices.length;
             
-            const firstHalf = prices.slice(Math.max(0, len - 50), len - 20);
-            const bottom1Price = Math.min(...firstHalf);
+            // First bottom (older)
+            const firstStart = Math.max(0, len - 50);
+            const firstEnd = len - 20;
+            const firstSlice = prices.slice(firstStart, firstEnd);
+            const bottom1Price = Math.min(...firstSlice);
             const bottom1Idx = prices.indexOf(bottom1Price);
             
-            const secondHalf = prices.slice(len - 30);
-            const bottom2Price = Math.min(...secondHalf);
+            // Second bottom (recent)
+            const secondStart = Math.max(0, len - 30);
+            const secondSlice = prices.slice(secondStart);
+            const bottom2Price = Math.min(...secondSlice);
             const bottom2Idx = prices.lastIndexOf(bottom2Price);
             
             if (bottom1Idx >= 0 && bottom2Idx >= 0 && yNeckline) {
@@ -717,65 +753,41 @@
                     ctx.lineTo(xBottom2, yBottom2);
                     ctx.fillStyle = 'rgba(250, 204, 21, 0.1)';
                     ctx.fill();
+                    
+                    // Mark bottoms
+                    ctx.fillStyle = '#4ade80';
+                    ctx.font = '8px Arial';
+                    ctx.fillText('B1', xBottom1 - 10, yBottom1 - 3);
+                    ctx.fillText('B2', xBottom2 + 5, yBottom2 - 3);
                 }
             }
         }
-        
-        // Draw horizontal lines (Breakout, Target, Stop Loss)
-        const yBreakout = getY(pattern.breakout_level);
-        const yTarget = getY(pattern.target);
-        const yStopLoss = getY(pattern.stop_loss);
-        
-        ctx.setLineDash([8, 4]);
-        
-        if (yBreakout) {
-            ctx.beginPath();
-            ctx.moveTo(startX, yBreakout);
-            ctx.lineTo(endX, yBreakout);
-            ctx.strokeStyle = '#f97316';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-        
-        if (yTarget && pattern.target > pattern.breakout_level) {
-            ctx.beginPath();
-            ctx.moveTo(startX, yTarget);
-            ctx.lineTo(endX, yTarget);
-            ctx.strokeStyle = '#22c55e';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]);
-            ctx.stroke();
-        }
-        
-        if (yStopLoss && pattern.stop_loss < pattern.current_price) {
-            ctx.beginPath();
-            ctx.moveTo(startX, yStopLoss);
-            ctx.lineTo(endX, yStopLoss);
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]);
-            ctx.stroke();
-        }
-        
-        ctx.setLineDash([]);
     }
 
     function displayPatternDetails(pattern) {
         const risk = pattern.current_price - pattern.stop_loss;
         const reward = pattern.target - pattern.breakout_level;
         const rrRatio = (reward / risk).toFixed(2);
+        const potentialReturn = ((pattern.target - pattern.current_price) / pattern.current_price * 100).toFixed(1);
         
         let html = `
             <div class="detail-item"><strong>Pattern:</strong> ${pattern.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern')}</div>
             <div class="detail-item"><strong>Confidence:</strong> ${pattern.confidence}%</div>
-            <div class="detail-item"><strong>Readiness:</strong> ${pattern.urgency_score || '—'}</div>
-            <div class="detail-item"><strong>Breakout:</strong> ${pattern.breakout_level || '—'}</div>
-            <div class="detail-item"><strong>Current:</strong> ${pattern.current_price || '—'}</div>
-            <div class="detail-item"><strong>Distance:</strong> ${pattern.distance_to_breakout_pct || '—'}%</div>
-            <div class="detail-item"><strong>Target:</strong> ${pattern.target || '—'}</div>
+            <div class="detail-item"><strong>Readiness Score:</strong> ${pattern.urgency_score || '—'}</div>
+            <div class="detail-item highlight"><strong>Breakout Level:</strong> ${pattern.breakout_level || '—'}</div>
+            <div class="detail-item"><strong>Current Price:</strong> ${pattern.current_price || '—'}</div>
+            <div class="detail-item"><strong>Distance to Breakout:</strong> ${pattern.distance_to_breakout_pct || '—'}%</div>
+            <div class="detail-item highlight"><strong>Target:</strong> ${pattern.target || '—'} (${potentialReturn}%)</div>
             <div class="detail-item"><strong>Stop Loss:</strong> ${pattern.stop_loss || '—'}</div>
-            <div class="detail-item"><strong>Risk/Reward:</strong> 1:${rrRatio}</div>
+            <div class="detail-item highlight"><strong>Risk/Reward:</strong> 1:${rrRatio}</div>
         `;
+        if (pattern.days_to_apex !== null && pattern.days_to_apex !== undefined) {
+            const urgencyText = pattern.days_to_apex <= 3 ? '🔴 HIGH URGENCY' : pattern.days_to_apex <= 7 ? '🟠 MEDIUM' : '🟢 LOW';
+            html += `<div class="detail-item"><strong>Days to Apex:</strong> ${pattern.days_to_apex} days ${urgencyText}</div>`;
+        }
+        if (pattern.support_slope) html += `<div class="detail-item"><strong>Support Slope:</strong> ${pattern.support_slope.toFixed(4)}</div>`;
+        if (pattern.resistance_slope) html += `<div class="detail-item"><strong>Resistance Slope:</strong> ${pattern.resistance_slope.toFixed(4)}</div>`;
+        
         patternDetailsDiv.innerHTML = html;
     }
 
