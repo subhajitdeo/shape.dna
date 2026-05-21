@@ -1,5 +1,5 @@
 {
-  "total_rejected": 370,
+  "total_rejected": 368,
   "reasons": {
     "THELEELA.NS": "No patterns detected",
     "LTF.NS": "No patterns detected",
@@ -36,7 +36,6 @@
     "EIHOTEL.NS": "No patterns detected",
     "EMCURE.NS": "No patterns detected",
     "MANKIND.NS": "No patterns detected",
-    "GRASIM.NS": "No patterns detected",
     "BANDHANBNK.NS": "No patterns detected",
     "TRAVELFOOD.NS": "No patterns detected",
     "IOC.NS": "No patterns detected",
@@ -96,7 +95,6 @@
     "ITI.NS": "No patterns detected",
     "OBEROIRLTY.NS": "No patterns detected",
     "PHOENIXLTD.NS": "No patterns detected",
-    "MARICO.NS": "No patterns detected",
     "BELRISE.NS": "No patterns detected",
     "COLPAL.NS": "No patterns detected",
     "WELSPUNLIV.NS": "No patterns detected",
@@ -140,7 +138,6 @@
     "NAVINFLUOR.NS": "No patterns detected",
     "KAJARIACER.NS": "No patterns detected",
     "JUBLFOOD.NS": "No patterns detected",
-    "CASTROLIND.NS": "No patterns detected",
     "JWL.NS": "No patterns detected",
     "INDIANB.NS": "No patterns detected",
     "POLYCAB.NS": "No patterns detected",
@@ -229,6 +226,7 @@
     "HINDUNILVR.NS": "No patterns detected",
     "FACT.NS": "No patterns detected",
     "MAHABANK.NS": "No patterns detected",
+    "ACC.NS": "No patterns detected",
     "LTFOODS.NS": "No patterns detected",
     "ASAHIINDIA.NS": "No patterns detected",
     "PCBL.NS": "No patterns detected",
