@@ -1,2 +1,0 @@
-symbol,date,pattern,confidence,urgency_score,breakout_direction,breakout_level,current_price,distance_to_breakout_pct,days_to_apex,target,stop_loss
-ACC.NS,2026-05-20,symmetrical_triangle,100,500.0,up,1344.97,1351.6,0,0,1382.05,1408.78
