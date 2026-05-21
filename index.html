@@ -139,6 +139,14 @@
             font-weight: 600;
             display: inline-block;
         }
+        .badge-volume {
+            background: #1e293b;
+            color: #4ade80;
+            padding: 2px 6px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            margin-left: 5px;
+        }
         .confidence-high { color: #4ade80; font-weight: bold; }
         .readiness-high { color: #f97316; }
         .chart-container { width: 100%; height: 450px; margin-bottom: 16px; }
@@ -183,8 +191,9 @@
             height: 2px;
             border-radius: 2px;
         }
-        .legend-color.dashed { border-top: 2px dashed; height: 0; }
-        .legend-color.dotted { border-top: 2px dotted; height: 0; }
+        .legend-color.solid { background: currentColor; height: 2px; }
+        .legend-color.dashed { border-top: 2px dashed currentColor; height: 0; width: 20px; }
+        .legend-color.dotted { border-top: 2px dotted currentColor; height: 0; width: 20px; }
     </style>
 </head>
 <body>
@@ -226,16 +235,17 @@
                         <tr><th>Symbol</th><th>Pattern</th><th>Conf</th><th>Readiness</th><th>Breakout</th><th>Days to Apex</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="6" class="loading">Loading patterns...</td></tr>
+                        <tr><td colspan="6" class="loading">Loading patterns......</td></tr>
                     </tbody>
                 </table>
             </div>
             <div class="legend">
-                <div class="legend-item"><div class="legend-color" style="background:#f97316; width:20px; height:2px;"></div><span>Breakout</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#22c55e; width:20px; height:2px;"></div><span>Target</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#ef4444; width:20px; height:2px;"></div><span>Stop Loss</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#6b7280; width:20px; height:2px;"></div><span>Support/Resistance</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#facc15; width:20px; height:2px;"></div><span>Trendline</span></div>
+                <div class="legend-item"><div class="legend-color solid" style="background:#f97316; width:20px; height:2px;"></div><span>Breakout</span></div>
+                <div class="legend-item"><div class="legend-color dotted" style="border-color:#22c55e;"></div><span>Target</span></div>
+                <div class="legend-item"><div class="legend-color dotted" style="border-color:#ef4444;"></div><span>Stop Loss</span></div>
+                <div class="legend-item"><div class="legend-color dashed" style="border-color:#6b7280;"></div><span>Support/Resistance</span></div>
+                <div class="legend-item"><div class="legend-color solid" style="background:#facc15;"></div><span>Trendline</span></div>
+                <div class="legend-item"><div class="legend-color solid" style="background:#4ade80;"></div><span>Volume Confirmed</span></div>
             </div>
         </div>
 
@@ -258,7 +268,7 @@
     let filteredPatterns = [];
     let currentChart = null;
     let currentSeries = null;
-    let currentLineSeries = []; // Store additional series to clear them
+    let currentLineSeries = [];
 
     // DOM elements
     const tbody = document.getElementById('tableBody');
@@ -289,7 +299,7 @@
             tbody.innerHTML = '<tr><td colspan="6" class="loading">❌ No active patterns found. Run detect_patterns.py first.</td></tr>';
             return false;
         }
-        // Include ALL patterns (triangles, rectangles, w-patterns)
+        // Include ALL patterns
         allPatterns = data.patterns;
         applyFiltersAndRender();
         return true;
@@ -332,8 +342,11 @@
             const days = p.days_to_apex !== null && p.days_to_apex !== undefined ? p.days_to_apex : '—';
             const readiness = p.urgency_score !== undefined ? p.urgency_score : '—';
             const patternName = p.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern');
+            const volumeConfirmed = p.volume_confirmed ? (p.volume_confirmed === 1 || p.volume_confirmed === true ? '✓' : '') : '';
+            const volumeBadge = volumeConfirmed ? '<span class="badge-volume"><i class="fas fa-chart-line"></i> Vol</span>' : '';
+            
             html += `<tr data-symbol="${p.symbol}">
-                        <td><strong>${p.symbol}</strong></td>
+                        <td><strong>${p.symbol}</strong> ${volumeBadge}</td>
                         <td><span class="badge">${patternName}</span></td>
                         <td class="confidence-high">${p.confidence}%</td>
                         <td class="readiness-high">${readiness}</td>
@@ -442,7 +455,6 @@
         
         // RECTANGLE PATTERN
         if (pattern.pattern === 'rectangle') {
-            // Draw horizontal support line
             if (pattern.support) {
                 currentSeries.createPriceLine({ 
                     price: pattern.support, 
@@ -453,7 +465,6 @@
                 });
             }
             
-            // Draw horizontal resistance line
             if (pattern.resistance) {
                 currentSeries.createPriceLine({ 
                     price: pattern.resistance, 
@@ -464,14 +475,12 @@
                 });
             }
             
-            // Draw rectangle box using line series
             if (pattern.support && pattern.resistance && chartData.length >= 10) {
                 const startIdx = Math.max(0, chartData.length - 40);
                 const endIdx = chartData.length - 1;
                 const startTimeRect = chartData[startIdx].time;
                 const endTimeRect = chartData[endIdx].time;
                 
-                // Top line (resistance)
                 const topLine = chart.addLineSeries({ 
                     color: '#f97316', 
                     lineWidth: 2, 
@@ -484,7 +493,6 @@
                 ]);
                 currentLineSeries.push(topLine);
                 
-                // Bottom line (support)
                 const bottomLine = chart.addLineSeries({ 
                     color: '#6b7280', 
                     lineWidth: 2, 
@@ -501,7 +509,6 @@
         
         // W PATTERN (DOUBLE BOTTOM)
         else if (pattern.pattern === 'w_pattern_double_bottom') {
-            // Draw neckline
             const neckline = pattern.neckline || pattern.breakout_level;
             if (neckline) {
                 currentSeries.createPriceLine({ 
@@ -513,19 +520,16 @@
                 });
             }
             
-            // Find bottoms in chart data
             if (chartData.length >= 30) {
                 const prices = chartData.map(d => d.low);
                 const len = prices.length;
                 
-                // Find first bottom (40-60 days ago)
                 const firstStart = Math.max(0, len - 60);
                 const firstEnd = len - 25;
                 const firstSlice = prices.slice(firstStart, firstEnd);
                 const bottom1Price = Math.min(...firstSlice);
                 const bottom1Idx = prices.indexOf(bottom1Price);
                 
-                // Find second bottom (last 20-30 days)
                 const secondStart = Math.max(0, len - 30);
                 const secondSlice = prices.slice(secondStart);
                 const bottom2Price = Math.min(...secondSlice);
@@ -537,7 +541,6 @@
                     const midIdx = Math.floor((bottom1Idx + bottom2Idx) / 2);
                     const neckTime = chartData[midIdx].time;
                     
-                    // Draw W shape
                     const wLineSeries = chart.addLineSeries({ 
                         color: '#facc15', 
                         lineWidth: 2, 
@@ -551,7 +554,6 @@
                     ]);
                     currentLineSeries.push(wLineSeries);
                     
-                    // Mark bottoms
                     currentSeries.setMarkers([
                         { time: bottom1Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom 1` },
                         { time: bottom2Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom 2` }
@@ -562,7 +564,6 @@
         
         // ASCENDING TRIANGLE
         else if (pattern.pattern === 'ascending_triangle') {
-            // Horizontal resistance line
             if (pattern.breakout_level) {
                 currentSeries.createPriceLine({ 
                     price: pattern.breakout_level, 
@@ -573,7 +574,6 @@
                 });
             }
             
-            // Rising support trendline
             if (pattern.support_slope !== undefined && pattern.support_slope !== null && pattern.stop_loss) {
                 const len = chartData.length;
                 const startSupport = pattern.stop_loss;
@@ -597,7 +597,6 @@
         else if (pattern.pattern === 'symmetrical_triangle') {
             const len = chartData.length;
             
-            // Resistance line (falling)
             if (pattern.resistance_slope !== undefined && pattern.resistance_slope !== null && pattern.breakout_level) {
                 const startResistance = pattern.breakout_level;
                 const endResistance = startResistance + (pattern.resistance_slope * len);
@@ -615,7 +614,6 @@
                 currentLineSeries.push(resistanceSeries);
             }
             
-            // Support line (rising)
             if (pattern.support_slope !== undefined && pattern.support_slope !== null && pattern.stop_loss) {
                 const startSupport = pattern.stop_loss;
                 const endSupport = startSupport + (pattern.support_slope * len);
@@ -636,10 +634,13 @@
     }
 
     function displayPatternDetails(pattern) {
+        const volumeConfirmed = pattern.volume_confirmed ? (pattern.volume_confirmed === 1 || pattern.volume_confirmed === true ? '✅ Yes' : '❌ No') : '—';
+        
         let html = `
             <div class="detail-item"><strong>Pattern:</strong> ${pattern.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern')}</div>
             <div class="detail-item"><strong>Confidence:</strong> ${pattern.confidence}%</div>
             <div class="detail-item"><strong>Readiness Score:</strong> ${pattern.urgency_score || '—'}</div>
+            <div class="detail-item"><strong>Volume Confirmed:</strong> ${volumeConfirmed}</div>
             <div class="detail-item"><strong>Breakout Level:</strong> ${pattern.breakout_level || '—'}</div>
             <div class="detail-item"><strong>Current Price:</strong> ${pattern.current_price || '—'}</div>
             <div class="detail-item"><strong>Distance to Breakout:</strong> ${pattern.distance_to_breakout_pct || '—'}%</div>
