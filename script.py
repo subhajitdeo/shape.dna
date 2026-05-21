@@ -1,47 +1,93 @@
 #!/usr/bin/env python3
+"""
+Fetch daily OHLCV data for NSE symbols listed in nifty500.csv.
+- Adds .NS suffix.
+- Waits 0.7 seconds between requests.
+- Skips symbols with no data.
+- Saves each symbol as data/SYMBOL.json.
+- Fetches 1 year of historical data.
+"""
+
+import os
 import json
-import matplotlib.pyplot as plt
+import time
 import pandas as pd
-from datetime import datetime
+import yfinance as yf
 
-def visualize_pattern(symbol, pattern_data):
-    """Visualize a detected pattern for a specific stock"""
-    
-    # Load stock data
-    with open(f'data/{symbol}.json', 'r') as f:
-        data = json.load(f)
-    
-    df = pd.DataFrame(data)
-    df['time'] = pd.to_datetime(df['time'])
-    df.set_index('time', inplace=True)
-    
-    # Plot recent data
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(df.index[-60:], df['close'].values[-60:], 'b-', label='Close Price', linewidth=1.5)
-    
-    # Add pattern annotation
-    pattern_text = "\n".join([f"{p['pattern']}: {p['confidence']}%" 
-                               for p in pattern_data['detected']])
-    
-    ax.text(0.02, 0.98, pattern_text, transform=ax.transAxes,
-            fontsize=10, verticalalignment='top',
-            bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.5))
-    
-    ax.set_title(f"{symbol} - Chart Patterns Detected")
-    ax.set_ylabel("Price")
-    ax.set_xlabel("Date")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(f'shape.dna/{symbol}_pattern.png', dpi=100)
-    plt.close()
+def load_symbols(csv_path="nifty500.csv"):
+    df = pd.read_csv(csv_path)
+    symbols = df['SYMBOL'].dropna().str.strip().tolist()
+    # Remove any stray header value if present
+    symbols = [s for s in symbols if s and s.upper() != 'SYMBOL']
+    return symbols
 
-# Load patterns and visualize
-with open('shape.dna/patterns.json', 'r') as f:
-    patterns = json.load(f)
+def fetch_symbol(symbol, retries=2, delay=1):
+    ticker = f"{symbol}.NS"
+    for attempt in range(retries):
+        try:
+            stock = yf.Ticker(ticker)
+            # CHANGE: 1 year of data instead of 3 months
+            hist = stock.history(period="1y")
+            if hist.empty:
+                print(f"⚠️ No data for {ticker}")
+                return None
+            hist = hist.reset_index()
+            hist = hist.rename(columns={
+                'Date': 'time',
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            })
+            hist['time'] = hist['time'].dt.strftime('%Y-%m-%d')
+            hist = hist[['time', 'open', 'high', 'low', 'close', 'volume']]
+            return hist.to_dict('records')
+        except Exception as e:
+            print(f"Error fetching {ticker} (attempt {attempt+1}): {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+    return None
 
-for stock in patterns['detailed_results'][:5]:  # Visualize top 5
-    visualize_pattern(stock['symbol'], stock)
-    print(f"📊 Generated chart for {stock['symbol']}")
+def main():
+    symbols = load_symbols()
+    print(f"📊 Found {len(symbols)} symbols in nifty500.csv")
+
+    os.makedirs("data", exist_ok=True)
+
+    successful = 0
+    failed = []
+
+    for idx, sym in enumerate(symbols, 1):
+        print(f"🔄 [{idx}/{len(symbols)}] Fetching {sym}.NS ...")
+        data = fetch_symbol(sym)
+        if data is not None:
+            out_file = f"data/{sym}.json"
+            with open(out_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            print(f"✅ Saved {sym}.NS - {len(data)} days")
+            successful += 1
+        else:
+            print(f"⚠️ Skipping {sym}.NS: No data or error")
+            failed.append(sym)
+
+        # 0.7 second delay between requests
+        time.sleep(0.7)
+
+    print("\n=========================================")
+    print(f"📊 FETCH SUMMARY:")
+    print(f"   ✅ Successful: {successful} symbols")
+    print(f"   ⚠️ Failed/Skipped: {len(failed)} symbols")
+    print(f"   📈 Total processed: {len(symbols)} symbols")
+    print("=========================================\n")
+
+    if failed:
+        print("⚠️ FAILED SYMBOLS:\n")
+        for sym in failed:
+            print(f"  - {sym}.NS")
+        print("\n✅ Fetch completed with partial data")
+    else:
+        print("✅ All symbols fetched successfully!")
+
+if __name__ == "__main__":
+    main()
