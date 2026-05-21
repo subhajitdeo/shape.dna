@@ -13,6 +13,20 @@ from scipy import stats
 import pandas as pd
 from scipy.signal import argrelextrema
 
+# Custom JSON encoder for handling numpy types and booleans
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles non-serializable types"""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, bool):
+            return int(obj)
+        return super().default(obj)
+
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -211,7 +225,7 @@ class PredictivePatternDetector:
                     "resistance_level": round(resistance_level, 2),
                     "target": round(resistance_level + (resistance_level - support_line), 2),
                     "stop_loss": round(support_line, 2),
-                    "volume_confirmed": volume_confirmed
+                    "volume_confirmed": int(volume_confirmed)  # Convert boolean to int
                 }
         except Exception as e:
             logger.debug(f"Ascending triangle detection error: {str(e)}")
@@ -297,7 +311,7 @@ class PredictivePatternDetector:
                     "resistance_slope": round(peak_slope, 4),
                     "target": round(apex_price if apex_price > 0 else current_price * 1.05, 2),
                     "stop_loss": round(support_at_now, 2),
-                    "volume_confirmed": volume_confirmed
+                    "volume_confirmed": int(volume_confirmed)  # Convert boolean to int
                 }
         except Exception as e:
             logger.debug(f"Symmetrical triangle detection error: {str(e)}")
@@ -358,7 +372,7 @@ class PredictivePatternDetector:
                         "resistance": round(recent_high, 2),
                         "target": round(recent_high + (recent_high - recent_low), 2),
                         "stop_loss": round(recent_low, 2),
-                        "volume_confirmed": volume_confirmed,
+                        "volume_confirmed": int(volume_confirmed),  # Convert boolean to int
                         "range_days": range_days
                     }
         except Exception as e:
@@ -418,7 +432,7 @@ class PredictivePatternDetector:
                             "neckline": round(neckline_price, 2),
                             "target": round(neckline_price + (neckline_price - t1_price), 2),
                             "stop_loss": round(t1_price * 0.98, 2),
-                            "volume_confirmed": volume_confirmed,
+                            "volume_confirmed": int(volume_confirmed),  # Convert boolean to int
                             "trough_similarity": round(trough_similarity, 2)
                         }
         except Exception as e:
@@ -492,7 +506,7 @@ def main():
     # Save full results
     os.makedirs('shape.dna', exist_ok=True)
     
-    # Save JSON with full details
+    # Save JSON with full details using custom encoder
     output_json = {
         "scan_date": datetime.now().isoformat(),
         "total_stocks_scanned": len(files),
@@ -501,7 +515,7 @@ def main():
     }
     
     with open('shape.dna/active_patterns.json', 'w') as fp:
-        json.dump(output_json, fp, indent=2)
+        json.dump(output_json, fp, indent=2, cls=CustomJSONEncoder)  # Use custom encoder
     
     # Save filtered CSV (high confidence and high urgency)
     high_confidence = [p for p in active_patterns if p['confidence'] >= 70 and p['urgency_score'] >= 50]
@@ -534,7 +548,7 @@ def main():
             "reasons": detector.rejection_reasons
         }
         with open('shape.dna/rejected_patterns.json', 'w') as fp:
-            json.dump(rejection_summary, fp, indent=2)
+            json.dump(rejection_summary, fp, indent=2, cls=CustomJSONEncoder)
         print(f"\n📝 Rejection summary saved to shape.dna/rejected_patterns.json")
     
     print(f"\n📊 Summary: {len(active_patterns)} total active patterns detected.")
