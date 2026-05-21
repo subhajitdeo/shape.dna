@@ -10,16 +10,15 @@ import yfinance as yf
 
 def fetch_batch_stocks(symbols_batch):
     """
-    Fetch data for multiple stocks in ONE API call
-    This sends 1 request for 20 stocks instead of 20 separate requests
+    Fetch data for 50 stocks in ONE API call
     """
     try:
-        # Download all symbols in this batch with ONE request
+        # ONE API call for 50 stocks
         data = yf.download(
-            symbols=" ".join(symbols_batch),  # Join symbols with space
+            symbols=" ".join(symbols_batch),
             period="3mo",
             group_by='ticker',
-            threads=False,  # Disable threading to keep it as single request
+            threads=False,
             progress=False
         )
         
@@ -57,52 +56,8 @@ def save_stock_data(symbol, df):
 def detect_patterns(df):
     """Your pattern detection logic here"""
     patterns = []
-    # Your existing pattern detection code
+    # Add your existing pattern detection code
     return patterns
-
-def process_batch(batch_symbols, batch_num, total_batches):
-    """
-    Process ONE batch of stocks with a SINGLE API call
-    """
-    print(f"\n📦 BATCH {batch_num}/{total_batches}")
-    print(f"   Stocks in this batch: {', '.join(batch_symbols)}")
-    print(f"   Making 1 API call for {len(batch_symbols)} stocks...")
-    print("-" * 50)
-    
-    # ONE API call for all stocks in this batch
-    batch_data = fetch_batch_stocks(batch_symbols)
-    
-    if not batch_data:
-        print(f"  ❌ Batch API call failed")
-        return []
-    
-    batch_results = []
-    
-    # Process each stock from the batch response
-    for symbol in batch_symbols:
-        print(f"  📊 Processing {symbol}...")
-        
-        if symbol in batch_data:
-            df = batch_data[symbol]
-            if df is not None and not df.empty:
-                # Save the data
-                if save_stock_data(symbol, df):
-                    # Detect patterns
-                    patterns = detect_patterns(df)
-                    batch_results.append({
-                        'symbol': symbol,
-                        'detected': patterns,
-                        'data_points': len(df)
-                    })
-                    print(f"    ✅ Saved {len(df)} records")
-                else:
-                    print(f"    ❌ Failed to save")
-            else:
-                print(f"    ⚠️ No data returned")
-        else:
-            print(f"    ⚠️ Symbol not in response")
-    
-    return batch_results
 
 def visualize_pattern(symbol, pattern_data):
     """Your existing visualization function"""
@@ -139,20 +94,21 @@ def visualize_pattern(symbol, pattern_data):
         
         return True
     except Exception as e:
-        print(f"  ❌ Visualization error for {symbol}: {e}")
+        print(f"  ❌ Visualization error: {e}")
         return False
 
 def main():
-    """Main function - processes 500 stocks in batches of 20 (25 API calls total)"""
+    """Process 500 stocks in batches of 50 per API call"""
     
-    # Load stock symbols from nifty500.csv
     print("\n" + "="*60)
     print("📈 NIFTY 500 BATCH PROCESSING")
     print("="*60)
     
+    # Load all 500 stocks from CSV
     try:
         df = pd.read_csv('nifty500.csv')
-        # Try to find the symbol column
+        
+        # Find symbol column
         symbol_col = None
         for col in ['Symbol', 'symbol', 'Ticker', 'ticker', 'Stock', 'stock']:
             if col in df.columns:
@@ -162,7 +118,6 @@ def main():
         if symbol_col:
             all_stocks = df[symbol_col].dropna().tolist()
         else:
-            # Assume first column
             all_stocks = df.iloc[:, 0].dropna().tolist()
         
         # Clean symbols
@@ -173,66 +128,103 @@ def main():
         print(f"❌ Error loading CSV: {e}")
         return
     
-    # BATCH CONFIGURATION
-    BATCH_SIZE = 20  # 20 stocks per API call
-    DELAY_BETWEEN_BATCHES = 2  # 2 seconds between batches (adjust as needed)
+    # BATCH CONFIGURATION - 50 stocks per API call
+    BATCH_SIZE = 50  # 50 stocks per API request
+    DELAY_BETWEEN_BATCHES = 2  # 2 seconds between batches
     
-    total_batches = (len(all_stocks) + BATCH_SIZE - 1) // BATCH_SIZE
+    total_stocks = len(all_stocks)
+    total_batches = (total_stocks + BATCH_SIZE - 1) // BATCH_SIZE
     
     print(f"\n⚙️  Configuration:")
     print(f"   • Batch size: {BATCH_SIZE} stocks per API call")
-    print(f"   • Total batches: {total_batches} API calls")
-    print(f"   • Delay between batches: {DELAY_BETWEEN_BATCHES} seconds")
-    print(f"   • Total API calls for {len(all_stocks)} stocks: {total_batches}")
+    print(f"   • Total stocks: {total_stocks}")
+    print(f"   • Total API calls needed: {total_batches}")
+    print(f"   • Delay between API calls: {DELAY_BETWEEN_BATCHES} seconds")
     
-    confirm = input(f"\n🚀 Start processing? (y/n): ")
+    if total_batches == 10:
+        print(f"   • For 500 stocks: {total_batches} API calls (50 stocks × 10 calls = 500)")
+    
+    confirm = input(f"\n🚀 Start processing {total_batches} API calls? (y/n): ")
     if confirm.lower() != 'y':
         print("❌ Cancelled")
         return
     
     all_results = []
     
-    # Process batches - EACH BATCH = 1 API CALL for 20 stocks
-    for i in range(0, len(all_stocks), BATCH_SIZE):
+    # Process in batches of 50 stocks per API call
+    for i in range(0, total_stocks, BATCH_SIZE):
         batch = all_stocks[i:i+BATCH_SIZE]
         batch_num = i // BATCH_SIZE + 1
         
-        # ONE API call for this entire batch of 20 stocks
-        batch_results = process_batch(batch, batch_num, total_batches)
-        all_results.extend(batch_results)
+        print(f"\n📡 API CALL {batch_num}/{total_batches}")
+        print(f"   Fetching {len(batch)} stocks in ONE request: {', '.join(batch[:3])}... ({len(batch)} total)")
+        print("-" * 50)
+        
+        # ONE API CALL for 50 stocks
+        batch_data = fetch_batch_stocks(batch)
+        
+        if batch_data:
+            print(f"  ✅ Data received for {len(batch_data)} stocks")
+            
+            # Process each stock from the batch response
+            for symbol in batch:
+                if symbol in batch_data and batch_data[symbol] is not None:
+                    df = batch_data[symbol]
+                    if not df.empty:
+                        # Save the data
+                        if save_stock_data(symbol, df):
+                            # Detect patterns
+                            patterns = detect_patterns(df)
+                            all_results.append({
+                                'symbol': symbol,
+                                'detected': patterns,
+                                'data_points': len(df)
+                            })
+                            print(f"    ✅ {symbol}: {len(df)} records saved")
+                        else:
+                            print(f"    ❌ {symbol}: Failed to save")
+                    else:
+                        print(f"    ⚠️ {symbol}: No data")
+                else:
+                    print(f"    ⚠️ {symbol}: Not in response")
+        else:
+            print(f"  ❌ Batch API call failed for batch {batch_num}")
         
         # Show progress
-        progress = (batch_num / total_batches) * 100
-        print(f"\n📈 Progress: {batch_num}/{total_batches} batches ({progress:.1f}%)")
-        print(f"   ✅ Successful: {len(batch_results)}/{len(batch)} stocks in this batch")
-        print(f"   📊 Total so far: {len(all_results)}/{len(all_stocks)} stocks")
+        stocks_done = min(i + BATCH_SIZE, total_stocks)
+        progress_pct = (stocks_done / total_stocks) * 100
+        print(f"\n📈 Progress: {stocks_done}/{total_stocks} stocks ({progress_pct:.1f}%)")
+        print(f"   ✅ Successful so far: {len(all_results)} stocks")
         
-        # Save intermediate results
+        # Save intermediate results after each batch
         os.makedirs('shape.dna', exist_ok=True)
         with open('shape.dna/patterns.json', 'w') as f:
             json.dump({'detailed_results': all_results}, f, indent=2)
         
-        # Delay between batches (except after last)
-        if i + BATCH_SIZE < len(all_stocks):
-            print(f"\n⏳ Waiting {DELAY_BETWEEN_BATCHES} seconds before next batch API call...")
+        # Delay between API calls (except after last)
+        if i + BATCH_SIZE < total_stocks:
+            print(f"\n⏳ Waiting {DELAY_BETWEEN_BATCHES} seconds before next API call...")
             time.sleep(DELAY_BETWEEN_BATCHES)
     
     print("\n" + "="*60)
     print(f"✅ DATA FETCHING COMPLETE!")
     print(f"   • Total API calls made: {total_batches}")
-    print(f"   • Stocks processed: {len(all_results)}/{len(all_stocks)}")
+    print(f"   • Total stocks processed: {len(all_results)}/{total_stocks}")
     print(f"   • Data saved in 'data/' directory")
     
     # Generate visualizations
-    print("\n" + "="*60)
-    print("🎨 GENERATING VISUALIZATIONS")
-    print("="*60)
+    if all_results:
+        print("\n" + "="*60)
+        print("🎨 GENERATING VISUALIZATIONS")
+        print("="*60)
+        
+        for idx, stock_data in enumerate(all_results, 1):
+            print(f"  [{idx}/{len(all_results)}] Visualizing {stock_data['symbol']}...")
+            visualize_pattern(stock_data['symbol'], stock_data)
+        
+        print(f"\n✅ Visualizations saved in 'shape.dna/' folder")
     
-    for idx, stock_data in enumerate(all_results, 1):
-        print(f"  [{idx}/{len(all_results)}] Visualizing {stock_data['symbol']}...")
-        visualize_pattern(stock_data['symbol'], stock_data)
-    
-    print(f"\n✅ Complete! Check 'shape.dna/' folder for visualizations")
+    print("\n✨ ALL DONE!")
 
 if __name__ == "__main__":
     main()
