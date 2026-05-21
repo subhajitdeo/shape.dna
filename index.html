@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>SONALIKA</title>
+    <title>SONALIKA - Pattern Visualizer</title>
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -163,12 +163,34 @@
         .loading { text-align: center; padding: 40px; color: #94a3b8; }
         @media (max-width: 900px) { .dashboard { flex-direction: column; } .chart-panel { min-width: auto; } }
         i { color: #94a3b8; }
+        .legend {
+            display: flex;
+            gap: 16px;
+            padding: 8px 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 0.7rem;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 2px;
+            border-radius: 2px;
+        }
+        .legend-color.dashed { border-top: 2px dashed; height: 0; }
+        .legend-color.dotted { border-top: 2px dotted; height: 0; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1><i class="fas fa-chart-line" style="color:#3b82f6"></i> · Active Long Patterns</h1>
-    <div class="sub">Pattern shapes drawn on chart</div>
+    <div class="sub">Pattern shapes drawn on chart - Rectangles, Triangles & W-Patterns</div>
 
     <div class="dashboard">
         <div class="patterns-panel">
@@ -193,7 +215,8 @@
                     <label>Sort by:</label>
                     <select id="sortBy">
                         <option value="symbol_az">Symbol (A → Z)</option>
-                        <option value="confidence_desc">Confidence (High → Low)</option>
+                        <option value="confidence_desc" selected>Confidence (High → Low)</option>
+                        <option value="urgency_desc">Readiness (High → Low)</option>
                     </select>
                 </div>
             </div>
@@ -206,6 +229,13 @@
                         <tr><td colspan="6" class="loading">Loading patterns...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background:#f97316; width:20px; height:2px;"></div><span>Breakout</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#22c55e; width:20px; height:2px;"></div><span>Target</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#ef4444; width:20px; height:2px;"></div><span>Stop Loss</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#6b7280; width:20px; height:2px;"></div><span>Support/Resistance</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#facc15; width:20px; height:2px;"></div><span>Trendline</span></div>
             </div>
         </div>
 
@@ -228,6 +258,7 @@
     let filteredPatterns = [];
     let currentChart = null;
     let currentSeries = null;
+    let currentLineSeries = []; // Store additional series to clear them
 
     // DOM elements
     const tbody = document.getElementById('tableBody');
@@ -258,8 +289,8 @@
             tbody.innerHTML = '<tr><td colspan="6" class="loading">❌ No active patterns found. Run detect_patterns.py first.</td></tr>';
             return false;
         }
-        // Exclude triangles
-        allPatterns = data.patterns.filter(p => !p.pattern.toLowerCase().includes('triangle'));
+        // Include ALL patterns (triangles, rectangles, w-patterns)
+        allPatterns = data.patterns;
         applyFiltersAndRender();
         return true;
     }
@@ -268,13 +299,17 @@
         const minConf = parseFloat(minConfInput.value) || 0;
         const minRead = parseFloat(minReadInput.value) || 0;
         let filtered = allPatterns.filter(p => p.confidence >= minConf && (p.urgency_score !== undefined ? p.urgency_score : 0) >= minRead);
+        
         // Apply sorting
         const sortValue = sortSelect.value;
         if (sortValue === 'symbol_az') {
             filtered.sort((a,b) => a.symbol.localeCompare(b.symbol));
         } else if (sortValue === 'confidence_desc') {
             filtered.sort((a,b) => b.confidence - a.confidence);
+        } else if (sortValue === 'urgency_desc') {
+            filtered.sort((a,b) => (b.urgency_score || 0) - (a.urgency_score || 0));
         }
+        
         filteredPatterns = filtered;
         patternCountSpan.innerText = `${filteredPatterns.length} / ${allPatterns.length}`;
         renderTable();
@@ -289,21 +324,22 @@
 
     function renderTable() {
         if (!filteredPatterns.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">⚠️ No patterns with current filters (rectangles/W only)</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">⚠️ No patterns with current filters</td></tr>';
             return;
         }
         let html = '';
         for (let p of filteredPatterns) {
-            const days = p.days_to_apex !== null ? p.days_to_apex : '—';
+            const days = p.days_to_apex !== null && p.days_to_apex !== undefined ? p.days_to_apex : '—';
             const readiness = p.urgency_score !== undefined ? p.urgency_score : '—';
+            const patternName = p.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern');
             html += `<tr data-symbol="${p.symbol}">
                         <td><strong>${p.symbol}</strong></td>
-                        <td><span class="badge">${p.pattern.replace(/_/g,' ')}</span></td>
+                        <td><span class="badge">${patternName}</span></td>
                         <td class="confidence-high">${p.confidence}%</td>
                         <td class="readiness-high">${readiness}</td>
-                        <td>${p.breakout_level}</td>
+                        <td>${p.breakout_level || '—'}</td>
                         <td>${days}</td>
-                     </tr>`;
+                      </tr>`;
         }
         tbody.innerHTML = html;
         document.querySelectorAll('#patternTable tbody tr').forEach(row => {
@@ -337,7 +373,11 @@
             close: d.close
         })).slice(-90);
 
-        if (currentChart) currentChart.remove();
+        if (currentChart) {
+            currentChart.remove();
+            currentLineSeries = [];
+        }
+        
         const chartContainer = document.getElementById('chartContainer');
         currentChart = LightweightCharts.createChart(chartContainer, {
             width: chartContainer.clientWidth,
@@ -347,6 +387,7 @@
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
             timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#334155' }
         });
+        
         currentSeries = currentChart.addCandlestickSeries({
             upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
             wickUpColor: '#26a69a', wickDownColor: '#ef5350'
@@ -355,70 +396,253 @@
 
         drawPatternOnChart(currentChart, pattern, chartData);
         displayPatternDetails(pattern);
+        
         window.addEventListener('resize', () => {
             if (currentChart) currentChart.applyOptions({ width: chartContainer.clientWidth });
         });
     }
 
     function drawPatternOnChart(chart, pattern, chartData) {
-        if (!chart) return;
-        const breakoutLevel = pattern.breakout_level;
-        const target = pattern.target;
-        const stopLoss = pattern.stop_loss;
-
+        if (!chart || !chartData || !chartData.length) return;
+        
+        const dates = chartData.map(d => d.time);
+        const firstTime = dates[0];
+        const lastTime = dates[dates.length - 1];
+        
         // Common horizontal lines
-        currentSeries.createPriceLine({ price: breakoutLevel, color: '#f97316', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'Breakout' });
-        if (target) currentSeries.createPriceLine({ price: target, color: '#22c55e', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'Target' });
-        if (stopLoss) currentSeries.createPriceLine({ price: stopLoss, color: '#ef4444', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'Stop Loss' });
-
+        if (pattern.breakout_level) {
+            currentSeries.createPriceLine({ 
+                price: pattern.breakout_level, 
+                color: '#f97316', 
+                lineWidth: 2, 
+                lineStyle: LightweightCharts.LineStyle.Dashed, 
+                title: 'Breakout' 
+            });
+        }
+        
+        if (pattern.target) {
+            currentSeries.createPriceLine({ 
+                price: pattern.target, 
+                color: '#22c55e', 
+                lineWidth: 1, 
+                lineStyle: LightweightCharts.LineStyle.Dotted, 
+                title: 'Target' 
+            });
+        }
+        
+        if (pattern.stop_loss) {
+            currentSeries.createPriceLine({ 
+                price: pattern.stop_loss, 
+                color: '#ef4444', 
+                lineWidth: 1, 
+                lineStyle: LightweightCharts.LineStyle.Dotted, 
+                title: 'Stop Loss' 
+            });
+        }
+        
+        // RECTANGLE PATTERN
         if (pattern.pattern === 'rectangle') {
-            if (pattern.support && pattern.resistance) {
-                currentSeries.createPriceLine({ price: pattern.support, color: '#6b7280', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'Support' });
-                currentSeries.createPriceLine({ price: pattern.resistance, color: '#f97316', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'Resistance' });
-                // Also draw a subtle shaded area? Not directly supported. Lines are enough.
+            // Draw horizontal support line
+            if (pattern.support) {
+                currentSeries.createPriceLine({ 
+                    price: pattern.support, 
+                    color: '#6b7280', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Dashed, 
+                    title: 'Support' 
+                });
+            }
+            
+            // Draw horizontal resistance line
+            if (pattern.resistance) {
+                currentSeries.createPriceLine({ 
+                    price: pattern.resistance, 
+                    color: '#f97316', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Dashed, 
+                    title: 'Resistance' 
+                });
+            }
+            
+            // Draw rectangle box using line series
+            if (pattern.support && pattern.resistance && chartData.length >= 10) {
+                const startIdx = Math.max(0, chartData.length - 40);
+                const endIdx = chartData.length - 1;
+                const startTimeRect = chartData[startIdx].time;
+                const endTimeRect = chartData[endIdx].time;
+                
+                // Top line (resistance)
+                const topLine = chart.addLineSeries({ 
+                    color: '#f97316', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    title: 'Rectangle Top'
+                });
+                topLine.setData([
+                    { time: startTimeRect, value: pattern.resistance },
+                    { time: endTimeRect, value: pattern.resistance }
+                ]);
+                currentLineSeries.push(topLine);
+                
+                // Bottom line (support)
+                const bottomLine = chart.addLineSeries({ 
+                    color: '#6b7280', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    title: 'Rectangle Bottom'
+                });
+                bottomLine.setData([
+                    { time: startTimeRect, value: pattern.support },
+                    { time: endTimeRect, value: pattern.support }
+                ]);
+                currentLineSeries.push(bottomLine);
             }
         }
+        
+        // W PATTERN (DOUBLE BOTTOM)
         else if (pattern.pattern === 'w_pattern_double_bottom') {
-            // Draw the W shape: two bottoms and the neckline (peak between them)
-            if (pattern.bottom1 && pattern.bottom2 && pattern.neckline && chartData.length >= 10) {
-                // We need approximate times for these levels. We'll find the dates where price was near these levels.
-                // Simpler: assume bottom1 occurred around 30 days ago, bottom2 around 10 days ago, neckline in between.
-                // For a cleaner drawing, we can add line series connecting these points.
-                const dates = chartData.map(d => d.time);
-                const len = dates.length;
-                // Approximate positions (backward)
-                const idxBottom1 = Math.max(0, len - 35);
-                const idxNeck = Math.max(0, len - 20);
-                const idxBottom2 = Math.max(0, len - 10);
-                const bottom1Time = dates[idxBottom1];
-                const neckTime = dates[idxNeck];
-                const bottom2Time = dates[idxBottom2];
+            // Draw neckline
+            const neckline = pattern.neckline || pattern.breakout_level;
+            if (neckline) {
+                currentSeries.createPriceLine({ 
+                    price: neckline, 
+                    color: '#facc15', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Dashed, 
+                    title: 'Neckline' 
+                });
+            }
+            
+            // Find bottoms in chart data
+            if (chartData.length >= 30) {
+                const prices = chartData.map(d => d.low);
+                const len = prices.length;
                 
-                // Draw W lines: bottom1 → neckline → bottom2
-                const wLineSeries = chart.addLineSeries({ color: '#facc15', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, title: 'W Pattern' });
-                wLineSeries.setData([
-                    { time: bottom1Time, value: pattern.bottom1 },
-                    { time: neckTime, value: pattern.neckline },
-                    { time: bottom2Time, value: pattern.bottom2 }
+                // Find first bottom (40-60 days ago)
+                const firstStart = Math.max(0, len - 60);
+                const firstEnd = len - 25;
+                const firstSlice = prices.slice(firstStart, firstEnd);
+                const bottom1Price = Math.min(...firstSlice);
+                const bottom1Idx = prices.indexOf(bottom1Price);
+                
+                // Find second bottom (last 20-30 days)
+                const secondStart = Math.max(0, len - 30);
+                const secondSlice = prices.slice(secondStart);
+                const bottom2Price = Math.min(...secondSlice);
+                let bottom2Idx = prices.lastIndexOf(bottom2Price);
+                
+                if (bottom1Idx >= 0 && bottom2Idx >= 0 && bottom1Idx !== bottom2Idx) {
+                    const bottom1Time = chartData[bottom1Idx].time;
+                    const bottom2Time = chartData[bottom2Idx].time;
+                    const midIdx = Math.floor((bottom1Idx + bottom2Idx) / 2);
+                    const neckTime = chartData[midIdx].time;
+                    
+                    // Draw W shape
+                    const wLineSeries = chart.addLineSeries({ 
+                        color: '#facc15', 
+                        lineWidth: 2, 
+                        lineStyle: LightweightCharts.LineStyle.Solid, 
+                        title: 'W Pattern' 
+                    });
+                    wLineSeries.setData([
+                        { time: bottom1Time, value: bottom1Price },
+                        { time: neckTime, value: neckline },
+                        { time: bottom2Time, value: bottom2Price }
+                    ]);
+                    currentLineSeries.push(wLineSeries);
+                    
+                    // Mark bottoms
+                    currentSeries.setMarkers([
+                        { time: bottom1Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom 1` },
+                        { time: bottom2Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom 2` }
+                    ]);
+                }
+            }
+        }
+        
+        // ASCENDING TRIANGLE
+        else if (pattern.pattern === 'ascending_triangle') {
+            // Horizontal resistance line
+            if (pattern.breakout_level) {
+                currentSeries.createPriceLine({ 
+                    price: pattern.breakout_level, 
+                    color: '#ef4444', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Dashed, 
+                    title: 'Resistance' 
+                });
+            }
+            
+            // Rising support trendline
+            if (pattern.support_slope !== undefined && pattern.support_slope !== null && pattern.stop_loss) {
+                const len = chartData.length;
+                const startSupport = pattern.stop_loss;
+                const endSupport = startSupport + (pattern.support_slope * len);
+                
+                const supportSeries = chart.addLineSeries({ 
+                    color: '#4ade80', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    title: 'Support Trendline'
+                });
+                supportSeries.setData([
+                    { time: firstTime, value: startSupport },
+                    { time: lastTime, value: endSupport }
                 ]);
-                // Also draw a horizontal line at neckline (already breakout level, but we can add extra)
-                // Mark the two bottoms with circles
-                currentSeries.setMarkers([
-                    { time: bottom1Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom1 ${pattern.bottom1}` },
-                    { time: bottom2Time, position: 'below', color: '#4ade80', shape: 'circle', text: `Bottom2 ${pattern.bottom2}` }
+                currentLineSeries.push(supportSeries);
+            }
+        }
+        
+        // SYMMETRICAL TRIANGLE
+        else if (pattern.pattern === 'symmetrical_triangle') {
+            const len = chartData.length;
+            
+            // Resistance line (falling)
+            if (pattern.resistance_slope !== undefined && pattern.resistance_slope !== null && pattern.breakout_level) {
+                const startResistance = pattern.breakout_level;
+                const endResistance = startResistance + (pattern.resistance_slope * len);
+                
+                const resistanceSeries = chart.addLineSeries({ 
+                    color: '#ef4444', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    title: 'Resistance Trendline'
+                });
+                resistanceSeries.setData([
+                    { time: firstTime, value: startResistance },
+                    { time: lastTime, value: endResistance }
                 ]);
+                currentLineSeries.push(resistanceSeries);
+            }
+            
+            // Support line (rising)
+            if (pattern.support_slope !== undefined && pattern.support_slope !== null && pattern.stop_loss) {
+                const startSupport = pattern.stop_loss;
+                const endSupport = startSupport + (pattern.support_slope * len);
+                
+                const supportSeries = chart.addLineSeries({ 
+                    color: '#4ade80', 
+                    lineWidth: 2, 
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    title: 'Support Trendline'
+                });
+                supportSeries.setData([
+                    { time: firstTime, value: startSupport },
+                    { time: lastTime, value: endSupport }
+                ]);
+                currentLineSeries.push(supportSeries);
             }
         }
     }
 
     function displayPatternDetails(pattern) {
         let html = `
-            <div class="detail-item"><strong>Pattern:</strong> ${pattern.pattern.replace(/_/g,' ')}</div>
+            <div class="detail-item"><strong>Pattern:</strong> ${pattern.pattern.replace(/_/g, ' ').replace('w pattern', 'W-Pattern')}</div>
             <div class="detail-item"><strong>Confidence:</strong> ${pattern.confidence}%</div>
             <div class="detail-item"><strong>Readiness Score:</strong> ${pattern.urgency_score || '—'}</div>
-            <div class="detail-item"><strong>Breakout Level:</strong> ${pattern.breakout_level}</div>
-            <div class="detail-item"><strong>Current Price:</strong> ${pattern.current_price}</div>
-            <div class="detail-item"><strong>Distance to Breakout:</strong> ${pattern.distance_to_breakout_pct}%</div>
+            <div class="detail-item"><strong>Breakout Level:</strong> ${pattern.breakout_level || '—'}</div>
+            <div class="detail-item"><strong>Current Price:</strong> ${pattern.current_price || '—'}</div>
+            <div class="detail-item"><strong>Distance to Breakout:</strong> ${pattern.distance_to_breakout_pct || '—'}%</div>
             <div class="detail-item"><strong>Target:</strong> ${pattern.target || '—'}</div>
             <div class="detail-item"><strong>Stop Loss:</strong> ${pattern.stop_loss || '—'}</div>
         `;
@@ -428,6 +652,9 @@
         if (pattern.support) html += `<div class="detail-item"><strong>Support:</strong> ${pattern.support}</div>`;
         if (pattern.resistance) html += `<div class="detail-item"><strong>Resistance:</strong> ${pattern.resistance}</div>`;
         if (pattern.neckline) html += `<div class="detail-item"><strong>Neckline:</strong> ${pattern.neckline}</div>`;
+        if (pattern.support_slope) html += `<div class="detail-item"><strong>Support Slope:</strong> ${pattern.support_slope}</div>`;
+        if (pattern.resistance_slope) html += `<div class="detail-item"><strong>Resistance Slope:</strong> ${pattern.resistance_slope}</div>`;
+        
         patternDetailsDiv.innerHTML = html;
     }
 
