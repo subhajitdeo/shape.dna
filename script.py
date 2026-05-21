@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 import os
 from pathlib import Path
-import yfinance as yf  # Assuming you're using yfinance for data
+import yfinance as yf
 
 def fetch_stock_data(symbol, period='3mo'):
     """Fetch stock data for a given symbol"""
@@ -42,13 +42,12 @@ def fetch_stock_data(symbol, period='3mo'):
 
 def detect_patterns(df):
     """Simple pattern detection - replace with your actual pattern detection logic"""
-    # This is a placeholder - replace with your actual pattern detection
     patterns = []
     
-    # Example pattern detection (implement your own logic here)
+    # Your existing pattern detection logic here
+    # This is just a placeholder
     close_prices = df['close'].values
     
-    # Simple pattern: bullish flag (just for demonstration)
     if len(close_prices) > 10:
         recent_high = max(close_prices[-10:])
         if close_prices[-1] > recent_high * 0.95:
@@ -59,7 +58,7 @@ def detect_patterns(df):
     
     return patterns
 
-def process_stock(symbol, pattern_detector=None):
+def process_stock(symbol):
     """Process a single stock: fetch data and detect patterns"""
     print(f"  📊 Fetching data for {symbol}...")
     
@@ -73,11 +72,8 @@ def process_stock(symbol, pattern_detector=None):
     df['time'] = pd.to_datetime(df['time'])
     df.set_index('time', inplace=True)
     
-    # Detect patterns (replace with your actual pattern detection)
-    if pattern_detector:
-        detected_patterns = pattern_detector(df)
-    else:
-        detected_patterns = detect_patterns(df)
+    # Detect patterns
+    detected_patterns = detect_patterns(df)
     
     return {
         'symbol': symbol,
@@ -136,7 +132,7 @@ def visualize_pattern(symbol, pattern_data):
         print(f"❌ Error visualizing {symbol}: {e}")
         return False
 
-def process_stocks_in_batches(stock_list, batch_size=20, delay_between_batches=5, delay_between_stocks=0.5):
+def process_stocks_in_batches(stock_list, batch_size=20, delay_between_batches=5):
     """
     Process stocks in batches to avoid API rate limiting
     
@@ -144,7 +140,6 @@ def process_stocks_in_batches(stock_list, batch_size=20, delay_between_batches=5
         stock_list: List of stock symbols to process
         batch_size: Number of stocks per batch (default 20)
         delay_between_batches: Delay between batches in seconds (default 5)
-        delay_between_stocks: Delay between stocks in same batch (default 0.5)
     """
     
     total_stocks = len(stock_list)
@@ -152,17 +147,26 @@ def process_stocks_in_batches(stock_list, batch_size=20, delay_between_batches=5
     failed = 0
     results = []
     
-    print(f"\n🚀 Starting to process {total_stocks} stocks in batches of {batch_size}")
-    print(f"⏱️  {delay_between_batches}s delay between batches, {delay_between_stocks}s between stocks\n")
+    # Calculate number of batches
+    num_batches = (total_stocks + batch_size - 1) // batch_size
     
-    for i in range(0, total_stocks, batch_size):
-        batch = stock_list[i:i+batch_size]
-        batch_num = i // batch_size + 1
-        total_batches = (total_stocks + batch_size - 1) // batch_size
+    print(f"\n🚀 Starting to process {total_stocks} stocks")
+    print(f"📦 Batch size: {batch_size} stocks per batch")
+    print(f"📊 Total batches: {num_batches}")
+    print(f"⏱️  Delay between batches: {delay_between_batches} seconds\n")
+    print("=" * 60)
+    
+    for batch_num in range(num_batches):
+        start_idx = batch_num * batch_size
+        end_idx = min(start_idx + batch_size, total_stocks)
+        batch = stock_list[start_idx:end_idx]
         
-        print(f"\n📦 Batch {batch_num}/{total_batches} - Processing stocks {i+1} to {min(i+batch_size, total_stocks)}")
-        print("-" * 50)
+        print(f"\n📦 BATCH {batch_num + 1}/{num_batches}")
+        print(f"   Stocks {start_idx + 1} to {end_idx} of {total_stocks}")
+        print(f"   Processing {len(batch)} stocks in this batch")
+        print("-" * 40)
         
+        # Process each stock in the current batch
         for idx, symbol in enumerate(batch, 1):
             print(f"  [{idx}/{len(batch)}] Processing {symbol}...")
             
@@ -177,43 +181,36 @@ def process_stocks_in_batches(stock_list, batch_size=20, delay_between_batches=5
                 failed += 1
                 print(f"    ❌ Failed to fetch data for {symbol}")
             
-            # Delay between stocks in same batch
+            # Small delay between stocks in same batch (0.5 seconds)
             if idx < len(batch):
-                time.sleep(delay_between_stocks)
+                time.sleep(0.5)
         
-        # Save intermediate results for this batch
+        # Save intermediate results after each batch
         if results:
             os.makedirs('shape.dna', exist_ok=True)
             with open('shape.dna/patterns.json', 'w') as f:
                 json.dump({'detailed_results': results}, f, indent=2)
-            print(f"\n💾 Saved intermediate results for {len(results)} stocks")
+            print(f"\n💾 Saved intermediate results ({len(results)} stocks so far)")
+        
+        # Show progress
+        progress_pct = (end_idx / total_stocks) * 100
+        print(f"\n📈 Progress: {end_idx}/{total_stocks} stocks processed ({progress_pct:.1f}%)")
         
         # Delay between batches (except after the last batch)
-        if i + batch_size < total_stocks:
+        if batch_num + 1 < num_batches:
             print(f"\n⏳ Waiting {delay_between_batches} seconds before next batch...")
+            print("   (This prevents API rate limiting)")
             time.sleep(delay_between_batches)
     
-    print(f"\n✅ Processing complete!")
-    print(f"   Successful: {successful}")
-    print(f"   Failed: {failed}")
-    print(f"   Total: {total_stocks}")
+    print("\n" + "=" * 60)
+    print(f"\n✅ PROCESSING COMPLETE!")
+    print(f"   ✅ Successful: {successful}")
+    print(f"   ❌ Failed: {failed}")
+    print(f"   📊 Total: {total_stocks}")
+    print(f"   📁 Data saved in 'data/' directory")
+    print(f"   📈 Patterns saved in 'shape.dna/patterns.json'")
     
     return results
-
-def generate_visualizations(results, max_stocks=None):
-    """Generate visualizations for processed stocks"""
-    print("\n🎨 Generating visualizations...")
-    
-    if max_stocks:
-        results = results[:max_stocks]
-    
-    successful_viz = 0
-    for idx, stock_data in enumerate(results, 1):
-        print(f"  [{idx}/{len(results)}] Visualizing {stock_data['symbol']}...")
-        if visualize_pattern(stock_data['symbol'], stock_data):
-            successful_viz += 1
-    
-    print(f"✅ Generated {successful_viz} visualizations")
 
 def load_stocks_from_csv(csv_file='nifty500.csv'):
     """Load stock symbols from nifty500.csv"""
@@ -226,11 +223,14 @@ def load_stocks_from_csv(csv_file='nifty500.csv'):
         for col in possible_columns:
             if col in df.columns:
                 stock_list = df[col].dropna().tolist()
+                # Clean up symbols (remove any whitespace)
+                stock_list = [str(s).strip().upper() for s in stock_list]
                 print(f"✅ Loaded {len(stock_list)} stocks from column '{col}' in {csv_file}")
                 return stock_list
         
         # If no matching column, assume first column has symbols
         stock_list = df.iloc[:, 0].dropna().tolist()
+        stock_list = [str(s).strip().upper() for s in stock_list]
         print(f"✅ Loaded {len(stock_list)} stocks from first column of {csv_file}")
         return stock_list
         
@@ -241,65 +241,96 @@ def load_stocks_from_csv(csv_file='nifty500.csv'):
 def main():
     """Main execution function"""
     
+    print("\n" + "="*60)
+    print("📈 NIFTY 500 PATTERN DETECTION SYSTEM")
+    print("="*60)
+    
     # Load stocks from CSV
     stock_list = load_stocks_from_csv('nifty500.csv')
     
     if not stock_list:
         print("❌ No stocks found in nifty500.csv")
-        print("\nPlease ensure your CSV file has one of these column names:")
-        print("  - Symbol, symbol, Ticker, ticker, Stock, stock, Code, code")
-        print("  - Or that the first column contains stock symbols")
+        print("\nPlease ensure your CSV file exists and has stock symbols")
         return
     
-    # Ask user for processing options
-    print("\n" + "="*50)
-    print("📈 NIFTY 500 Pattern Detection")
-    print("="*50)
-    print(f"Total stocks to process: {len(stock_list)}")
-    print("\nProcessing options:")
-    print("  1. Process all 500 stocks (may take several hours)")
-    print("  2. Process first 100 stocks")
-    print("  3. Process first 50 stocks")
-    print("  4. Custom number")
+    # Display first few stocks
+    print(f"\n📋 First 10 stocks from your list:")
+    for i, symbol in enumerate(stock_list[:10], 1):
+        print(f"   {i}. {symbol}")
     
-    choice = input("\nSelect option (1-4): ").strip()
+    # Ask user for processing options
+    print("\n" + "-"*60)
+    print("Processing Options:")
+    print("-"*60)
+    print(f"   Total stocks available: {len(stock_list)}")
+    print(f"   Batch size: 20 stocks per batch")
+    print(f"   Delay between batches: 5 seconds")
+    print(f"\n   Estimated time for:")
+    print(f"   - 100 stocks: ~{(100/20)*5 + 100*0.5:.0f} minutes")
+    print(f"   - 500 stocks: ~{(500/20)*5 + 500*0.5:.0f} minutes")
+    print("-"*60)
+    
+    choice = input("\nHow many stocks do you want to process?\n  [1] All 500 stocks\n  [2] First 100 stocks\n  [3] First 50 stocks\n  [4] Custom number\n\nChoice (1-4): ").strip()
     
     if choice == '1':
         stocks_to_process = stock_list
     elif choice == '2':
         stocks_to_process = stock_list[:100]
+        print(f"\n⚠️  Note: You'll process {len(stocks_to_process)} stocks in 5 batches of 20")
     elif choice == '3':
         stocks_to_process = stock_list[:50]
+        print(f"\n⚠️  Note: You'll process {len(stocks_to_process)} stocks in 3 batches of 20")
     elif choice == '4':
         num = int(input("Enter number of stocks to process: "))
         stocks_to_process = stock_list[:num]
+        num_batches = (num + 19) // 20  # Ceiling division
+        print(f"\n⚠️  Note: You'll process {len(stocks_to_process)} stocks in {num_batches} batches of 20")
     else:
-        print("Invalid choice. Processing first 50 stocks.")
-        stocks_to_process = stock_list[:50]
+        print("❌ Invalid choice. Exiting.")
+        return
     
-    print(f"\n📊 Will process {len(stocks_to_process)} stocks")
+    confirm = input(f"\n✅ Ready to process {len(stocks_to_process)} stocks in batches of 20. Continue? (y/n): ")
+    if confirm.lower() != 'y':
+        print("❌ Cancelled.")
+        return
     
-    # Process stocks in batches
+    # Process stocks in batches of 20 with 5 second delay
     results = process_stocks_in_batches(
         stock_list=stocks_to_process,
-        batch_size=20,           # 20 stocks per batch
-        delay_between_batches=5,  # 5 seconds between batches
-        delay_between_stocks=0.5  # 0.5 seconds between stocks in same batch
+        batch_size=20,           # ← 20 stocks per batch as you requested
+        delay_between_batches=5  # ← 5 seconds between batches
     )
     
-    # Generate visualizations for all processed stocks
+    # Generate visualizations for processed stocks
     if results:
-        generate_visualizations(results)
+        print("\n" + "="*60)
+        print("🎨 GENERATING VISUALIZATIONS")
+        print("="*60)
+        
+        successful_viz = 0
+        for idx, stock_data in enumerate(results, 1):
+            print(f"  [{idx}/{len(results)}] Visualizing {stock_data['symbol']}...")
+            if visualize_pattern(stock_data['symbol'], stock_data):
+                successful_viz += 1
+        
+        print(f"\n✅ Generated {successful_viz} visualizations in 'shape.dna/' folder")
         
         # Print summary of detected patterns
-        print("\n📊 Pattern Detection Summary:")
-        print("-" * 50)
-        for stock_data in results[:10]:  # Show first 10
-            if stock_data['detected']:
+        stocks_with_patterns = [r for r in results if r['detected']]
+        if stocks_with_patterns:
+            print(f"\n📊 Pattern Detection Summary:")
+            print("-" * 50)
+            print(f"   Found patterns in {len(stocks_with_patterns)} out of {len(results)} stocks")
+            print(f"\n   Top stocks with patterns:")
+            for stock_data in stocks_with_patterns[:10]:
                 patterns = ", ".join([p['pattern'] for p in stock_data['detected']])
-                print(f"  {stock_data['symbol']}: {patterns}")
-        
-        print(f"\n✨ Complete! Check 'shape.dna/' folder for visualizations")
+                print(f"   • {stock_data['symbol']}: {patterns}")
+    
+    print("\n✨ ALL DONE! Check the following folders:")
+    print(f"   📁 'data/' - Raw stock data (JSON files)")
+    print(f"   📁 'shape.dna/' - Pattern visualizations (PNG files)")
+    print(f"   📄 'shape.dna/patterns.json' - Pattern detection results")
+    print("\n" + "="*60)
 
 if __name__ == "__main__":
     main()
