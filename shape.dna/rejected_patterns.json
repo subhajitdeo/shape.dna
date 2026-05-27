@@ -1,5 +1,5 @@
 {
-  "total_rejected": 382,
+  "total_rejected": 383,
   "reasons": {
     "GLAND.NS": "No patterns detected",
     "THELEELA.NS": "No patterns detected",
@@ -371,6 +371,7 @@
     "AARTIIND.NS": "No patterns detected",
     "PATANJALI.NS": "No patterns detected",
     "CPPLUS.NS": "No patterns detected",
+    "ASHAPURMIN.NS": "No patterns detected",
     "EMCURE.NS": "No patterns detected",
     "GRAVITA.NS": "No patterns detected",
     "KPRMILL.NS": "No patterns detected",
