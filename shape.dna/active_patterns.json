@@ -1,7 +1,7 @@
 {
-  "scan_date": "2026-07-04T11:56:23.756964",
+  "scan_date": "2026-07-05T12:04:33.336809",
   "total_stocks_scanned": 492,
-  "active_patterns_count": 75,
+  "active_patterns_count": 76,
   "patterns": [
     {
       "pattern": "symmetrical_triangle",
@@ -55,6 +55,24 @@
       "stop_loss": 667.96,
       "volume_confirmed": 0,
       "symbol": "BIKAJI.NS",
+      "date": "2026-07-03"
+    },
+    {
+      "pattern": "symmetrical_triangle",
+      "status": "active",
+      "confidence": 86.9,
+      "urgency_score": 273.5,
+      "breakout_direction": "up",
+      "breakout_level": 2462.71,
+      "current_price": 2395.5,
+      "distance_to_breakout_pct": 2.8,
+      "days_to_apex": 1,
+      "support_slope": 20.9333,
+      "resistance_slope": -0.5583,
+      "target": 2462.07,
+      "stop_loss": 2438.13,
+      "volume_confirmed": 1,
+      "symbol": "GLAXO.NS",
       "date": "2026-07-03"
     },
     {
@@ -163,6 +181,24 @@
       "volume_confirmed": 1,
       "trough_similarity": 0.84,
       "symbol": "RHIM.NS",
+      "date": "2026-07-03"
+    },
+    {
+      "pattern": "w_pattern_double_bottom",
+      "status": "active",
+      "confidence": 100,
+      "urgency_score": 71.3,
+      "breakout_direction": "up",
+      "breakout_level": 1218.45,
+      "current_price": 1184.5,
+      "distance_to_breakout_pct": 2.9,
+      "days_to_apex": null,
+      "neckline": 1218.45,
+      "target": 1305.75,
+      "stop_loss": 1108.53,
+      "volume_confirmed": 1,
+      "trough_similarity": 0.03,
+      "symbol": "KPRMILL.NS",
       "date": "2026-07-03"
     },
     {
@@ -726,24 +762,6 @@
     {
       "pattern": "w_pattern_double_bottom",
       "status": "active",
-      "confidence": 65.2,
-      "urgency_score": 44.8,
-      "breakout_direction": "up",
-      "breakout_level": 1079.6,
-      "current_price": 1046.8,
-      "distance_to_breakout_pct": 3.1,
-      "days_to_apex": null,
-      "neckline": 1079.6,
-      "target": 1124.6,
-      "stop_loss": 1013.91,
-      "volume_confirmed": 0,
-      "trough_similarity": 0.51,
-      "symbol": "PREMIERENE.NS",
-      "date": "2026-07-03"
-    },
-    {
-      "pattern": "w_pattern_double_bottom",
-      "status": "active",
       "confidence": 52.0,
       "urgency_score": 42.5,
       "breakout_direction": "up",
@@ -865,24 +883,6 @@
       "volume_confirmed": 0,
       "trough_similarity": 0.63,
       "symbol": "SAIL.NS",
-      "date": "2026-07-03"
-    },
-    {
-      "pattern": "w_pattern_double_bottom",
-      "status": "active",
-      "confidence": 49.0,
-      "urgency_score": 36.0,
-      "breakout_direction": "up",
-      "breakout_level": 1689.2,
-      "current_price": 1645.7,
-      "distance_to_breakout_pct": 2.6,
-      "days_to_apex": null,
-      "neckline": 1689.2,
-      "target": 1742.6,
-      "stop_loss": 1603.08,
-      "volume_confirmed": 0,
-      "trough_similarity": 0.78,
-      "symbol": "LALPATHLAB.NS",
       "date": "2026-07-03"
     },
     {
@@ -1099,6 +1099,24 @@
       "stop_loss": 1559.95,
       "volume_confirmed": 1,
       "symbol": "POLICYBZR.NS",
+      "date": "2026-07-03"
+    },
+    {
+      "pattern": "symmetrical_triangle",
+      "status": "active",
+      "confidence": 77.0,
+      "urgency_score": 15.5,
+      "breakout_direction": "up",
+      "breakout_level": 93.35,
+      "current_price": 91.25,
+      "distance_to_breakout_pct": 2.3,
+      "days_to_apex": 19,
+      "support_slope": 0.0427,
+      "resistance_slope": -0.1123,
+      "target": 91.2,
+      "stop_loss": 90.39,
+      "volume_confirmed": 0,
+      "symbol": "SBFC.NS",
       "date": "2026-07-03"
     },
     {

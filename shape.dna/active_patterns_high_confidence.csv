@@ -2,12 +2,14 @@ symbol,date,pattern,confidence,urgency_score,breakout_direction,breakout_level,c
 SAMMAANCAP.NS,2026-07-03,symmetrical_triangle,100.0,500.0,up,175.24,175.64,0.0,,175.67,176.72
 AWL.NS,2026-07-03,symmetrical_triangle,100.0,500.0,up,190.15,191.11,0.0,,191.67,192.11
 BIKAJI.NS,2026-07-03,symmetrical_triangle,94.9,450.2,up,665.58,662.2,0.5,,666.42,667.96
+GLAXO.NS,2026-07-03,symmetrical_triangle,86.9,273.5,up,2462.71,2395.5,2.8,1.0,2462.07,2438.13
 BSE.NS,2026-07-03,symmetrical_triangle,73.4,269.4,up,3918.13,3816.6,2.7,,4055.89,4169.33
 NLCINDIA.NS,2026-07-03,symmetrical_triangle,86.8,99.3,up,322.36,313.5,2.8,3.0,318.13,317.05
 ANGELONE.NS,2026-07-03,w_pattern_double_bottom,100.0,92.8,up,354.8,352.25,0.7,,385.85,317.27
 HYUNDAI.NS,2026-07-03,w_pattern_double_bottom,100.0,81.6,up,2030.1,1993.4,1.8,,2169.2,1853.18
 SCI.NS,2026-07-03,symmetrical_triangle,94.1,80.0,up,308.05,301.75,2.1,4.0,304.46,301.29
 RHIM.NS,2026-07-03,w_pattern_double_bottom,88.4,77.6,up,389.0,384.3,1.2,,407.15,363.43
+KPRMILL.NS,2026-07-03,w_pattern_double_bottom,100.0,71.3,up,1218.45,1184.5,2.9,,1305.75,1108.53
 PFIZER.NS,2026-07-03,w_pattern_double_bottom,72.7,68.9,up,4592.5,4568.6,0.5,,4762.6,4333.95
 360ONE.NS,2026-07-03,w_pattern_double_bottom,100.0,67.9,up,1145.1,1109.5,3.2,,1238.2,1030.96
 GODFRYPHLP.NS,2026-07-03,symmetrical_triangle,78.7,67.6,up,2216.28,2170.1,2.1,4.0,2185.84,2180.07
