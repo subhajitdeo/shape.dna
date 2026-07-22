@@ -1,5 +1,5 @@
 {
-  "scan_date": "2026-07-21T12:11:29.683451",
+  "scan_date": "2026-07-22T12:14:39.361512",
   "total_stocks_scanned": 492,
   "active_patterns_count": 109,
   "patterns": [
@@ -778,24 +778,6 @@
       "date": "2026-07-20"
     },
     {
-      "pattern": "w_pattern_double_bottom",
-      "status": "active",
-      "confidence": 100,
-      "urgency_score": 51.3,
-      "breakout_direction": "up",
-      "breakout_level": 1604.5,
-      "current_price": 1530.0,
-      "distance_to_breakout_pct": 4.9,
-      "days_to_apex": null,
-      "neckline": 1604.5,
-      "target": 1722.4,
-      "stop_loss": 1456.87,
-      "volume_confirmed": 0,
-      "trough_similarity": 1.84,
-      "symbol": "ADANIGREEN.NS",
-      "date": "2026-07-20"
-    },
-    {
       "pattern": "symmetrical_triangle",
       "status": "active",
       "confidence": 50.6,
@@ -811,6 +793,24 @@
       "stop_loss": 633.9,
       "volume_confirmed": 0,
       "symbol": "TRITURBINE.NS",
+      "date": "2026-07-20"
+    },
+    {
+      "pattern": "w_pattern_double_bottom",
+      "status": "active",
+      "confidence": 100,
+      "urgency_score": 51.3,
+      "breakout_direction": "up",
+      "breakout_level": 1604.5,
+      "current_price": 1530.0,
+      "distance_to_breakout_pct": 4.9,
+      "days_to_apex": null,
+      "neckline": 1604.5,
+      "target": 1722.4,
+      "stop_loss": 1456.87,
+      "volume_confirmed": 0,
+      "trough_similarity": 1.84,
+      "symbol": "ADANIGREEN.NS",
       "date": "2026-07-20"
     },
     {
@@ -1014,24 +1014,6 @@
     {
       "pattern": "w_pattern_double_bottom",
       "status": "active",
-      "confidence": 65.4,
-      "urgency_score": 43.8,
-      "breakout_direction": "up",
-      "breakout_level": 2210.6,
-      "current_price": 2139.7,
-      "distance_to_breakout_pct": 3.3,
-      "days_to_apex": null,
-      "neckline": 2210.6,
-      "target": 2303.0,
-      "stop_loss": 2075.84,
-      "volume_confirmed": 0,
-      "trough_similarity": 0.93,
-      "symbol": "HINDUNILVR.NS",
-      "date": "2026-07-20"
-    },
-    {
-      "pattern": "w_pattern_double_bottom",
-      "status": "active",
       "confidence": 49.6,
       "urgency_score": 43.8,
       "breakout_direction": "up",
@@ -1045,6 +1027,24 @@
       "volume_confirmed": 0,
       "trough_similarity": 1.12,
       "symbol": "WIPRO.NS",
+      "date": "2026-07-20"
+    },
+    {
+      "pattern": "w_pattern_double_bottom",
+      "status": "active",
+      "confidence": 65.4,
+      "urgency_score": 43.8,
+      "breakout_direction": "up",
+      "breakout_level": 2210.6,
+      "current_price": 2139.7,
+      "distance_to_breakout_pct": 3.3,
+      "days_to_apex": null,
+      "neckline": 2210.6,
+      "target": 2303.0,
+      "stop_loss": 2075.84,
+      "volume_confirmed": 0,
+      "trough_similarity": 0.93,
+      "symbol": "HINDUNILVR.NS",
       "date": "2026-07-20"
     },
     {
@@ -1302,24 +1302,6 @@
     {
       "pattern": "w_pattern_double_bottom",
       "status": "active",
-      "confidence": 46.9,
-      "urgency_score": 34.9,
-      "breakout_direction": "up",
-      "breakout_level": 1337.8,
-      "current_price": 1304.2,
-      "distance_to_breakout_pct": 2.6,
-      "days_to_apex": null,
-      "neckline": 1337.8,
-      "target": 1378.4,
-      "stop_loss": 1271.26,
-      "volume_confirmed": 0,
-      "trough_similarity": 0.28,
-      "symbol": "TRAVELFOOD.NS",
-      "date": "2026-07-20"
-    },
-    {
-      "pattern": "w_pattern_double_bottom",
-      "status": "active",
       "confidence": 49.4,
       "urgency_score": 34.9,
       "breakout_direction": "up",
@@ -1333,6 +1315,24 @@
       "volume_confirmed": 0,
       "trough_similarity": 0.88,
       "symbol": "BAJAJFINSV.NS",
+      "date": "2026-07-20"
+    },
+    {
+      "pattern": "w_pattern_double_bottom",
+      "status": "active",
+      "confidence": 46.9,
+      "urgency_score": 34.9,
+      "breakout_direction": "up",
+      "breakout_level": 1337.8,
+      "current_price": 1304.2,
+      "distance_to_breakout_pct": 2.6,
+      "days_to_apex": null,
+      "neckline": 1337.8,
+      "target": 1378.4,
+      "stop_loss": 1271.26,
+      "volume_confirmed": 0,
+      "trough_similarity": 0.28,
+      "symbol": "TRAVELFOOD.NS",
       "date": "2026-07-20"
     },
     {
@@ -1858,24 +1858,6 @@
       "date": "2026-07-20"
     },
     {
-      "pattern": "symmetrical_triangle",
-      "status": "active",
-      "confidence": 38.7,
-      "urgency_score": 1.7,
-      "breakout_direction": "up",
-      "breakout_level": 517.64,
-      "current_price": 487.75,
-      "distance_to_breakout_pct": 6.1,
-      "days_to_apex": 44,
-      "support_slope": 0.4601,
-      "resistance_slope": -0.1126,
-      "target": 512.67,
-      "stop_loss": 492.36,
-      "volume_confirmed": 0,
-      "symbol": "KEC.NS",
-      "date": "2026-07-20"
-    },
-    {
       "pattern": "w_pattern_double_bottom",
       "status": "active",
       "confidence": 60.5,
@@ -1891,6 +1873,24 @@
       "volume_confirmed": 0,
       "trough_similarity": 0.01,
       "symbol": "BALKRISIND.NS",
+      "date": "2026-07-20"
+    },
+    {
+      "pattern": "symmetrical_triangle",
+      "status": "active",
+      "confidence": 38.7,
+      "urgency_score": 1.7,
+      "breakout_direction": "up",
+      "breakout_level": 517.64,
+      "current_price": 487.75,
+      "distance_to_breakout_pct": 6.1,
+      "days_to_apex": 44,
+      "support_slope": 0.4601,
+      "resistance_slope": -0.1126,
+      "target": 512.67,
+      "stop_loss": 492.36,
+      "volume_confirmed": 0,
+      "symbol": "KEC.NS",
       "date": "2026-07-20"
     },
     {
