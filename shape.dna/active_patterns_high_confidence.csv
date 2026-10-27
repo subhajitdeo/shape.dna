@@ -1,8 +1,6 @@
 symbol,date,pattern,confidence,urgency_score,breakout_direction,breakout_level,current_price,distance_to_breakout_pct,days_to_apex,target,stop_loss
-BLUESTARCO.NS,2026-10-23,w_pattern_double_bottom,100.0,60.6,up,1558.0,1499.0,3.9,,1659.1,1427.76
-TATACONSUM.NS,2026-10-23,symmetrical_triangle,88.7,58.5,up,974.8,963.9,1.1,6.0,965.48,960.54
-APOLLOHOSP.NS,2026-10-23,w_pattern_double_bottom,85.7,52.7,up,8027.5,7730.0,3.8,,8389.0,7512.68
-ITC.NS,2026-10-23,w_pattern_double_bottom,91.2,52.3,up,268.9,257.9,4.3,,281.9,250.78
-CASTROLIND.NS,2026-10-23,w_pattern_double_bottom,80.5,51.4,up,201.67,194.64,3.6,,210.11,189.37
-ITCHOTELS.NS,2026-10-23,w_pattern_double_bottom,83.5,50.2,up,162.48,156.25,4.0,,171.05,150.83
-HBLENGINE.NS,2026-10-23,w_pattern_double_bottom,100.0,50.1,up,808.3,769.85,5.0,,911.95,690.56
+LAURUSLABS.NS,2026-10-26,w_pattern_double_bottom,74.4,70.7,up,2069.2,2058.9,0.5,,2167.0,1931.97
+APOLLOHOSP.NS,2026-10-26,w_pattern_double_bottom,85.7,65.7,up,8027.5,7844.0,2.3,,8389.0,7512.68
+HAL.NS,2026-10-26,w_pattern_double_bottom,100.0,55.2,up,4989.0,4775.0,4.5,,5330.6,4554.45
+TATACOMM.NS,2026-10-26,w_pattern_double_bottom,100.0,50.9,up,1763.7,1681.2,4.9,,1870.7,1623.57
+THERMAX.NS,2026-10-26,w_pattern_double_bottom,90.2,50.6,up,3326.8,3187.0,4.4,,3515.5,3075.34
